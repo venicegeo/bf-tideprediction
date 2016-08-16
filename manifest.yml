@@ -1,0 +1,10 @@
+# Manifest for use in CloudFoundry
+---
+applications:
+- name: bf_TidePrediction
+  memory: 2056M
+  instances: 1
+  buildpack: python-2.7.6
+  random-route: true
+  command: ~/launch.sh
+

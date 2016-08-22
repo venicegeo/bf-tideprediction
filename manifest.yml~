@@ -6,5 +6,5 @@ applications:
   instances: 1
   buildpack: https://github.com/heroku/heroku-buildpack-python
   random-route: true
-  command: ~/launch.sh
+  command: sudo ~/launch.sh
 

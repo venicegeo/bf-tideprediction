@@ -1,4 +1,4 @@
-sudo ym install pip
+sudo yum install pip
 sudo pip install numpy
 sudo pip install Shapely
 sudo pip install pytides

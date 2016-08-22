@@ -4,7 +4,7 @@ applications:
 - name: bf_TidePrediction
   memory: 2056M
   instances: 1
-  buildpack: python-2.7.6
+  buildpack: python
   random-route: true
   command: ~/launch.sh
 

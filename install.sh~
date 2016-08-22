@@ -1,4 +1,5 @@
 sudo yum install pip
+sudo yum install libgeos-dev
 sudo pip install numpy
 sudo pip install Shapely
 sudo pip install pytides

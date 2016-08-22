@@ -4,7 +4,7 @@ applications:
 - name: bf_TidePrediction
   memory: 2056M
   instances: 1
-  buildpack: https://github.com/heroku/heroku-buildpack-python
+  buildpack: python
   random-route: true
   command: ~/launch.sh
 

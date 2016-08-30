@@ -1,10 +1,2 @@
-sudo yum install pip
-sudo yum install libgeos-dev
-sudo pip install numpy
-sudo pip install Shapely
-sudo pip install pytides
-sudo pip install json
-sudo pip install nose
-sudo pip install flask
-sudo pip install flask-login
-sudo pip install flask-wtf
+pip install Shapely
+

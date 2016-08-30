@@ -1,3 +1,12 @@
-#!flask/bin/python
+from flask import Flask
+import os
 from app import app
-app.run(debug=True)
+from waitress import serve
+port = int(os.getenv("PORT"))
+#app = Flask(__name__)
+import platform
+print platform.dist()
+if __name__ == '__main__':
+    #app.run(debug=True)
+    serve(app, port=port)
+

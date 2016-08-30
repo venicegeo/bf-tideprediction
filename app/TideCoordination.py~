@@ -6,18 +6,11 @@ from pytides.tide import Tide
 import numpy as np
 import nose
 
-try:
-    from shapely import shape, Point
-except:
-    try:
-        from shapely.geometry import shape, Point
-    except:
-        print 'Error importing Shapely.  Please reinstall and try again'
 
 def test_tide_prediction():
     """Nose test based upon verified historic tide data"""
     js = loadJSON()
-    results = TideCoordination(-33.85, 151.233, js, dtg='2016-05-31-0-1')
+    results = TideCoordination(-33.85, 151.233, dtg='2016-05-31-0-1')
     lookupValue = 0.525
     errorRange = 0.5
     check = 0
@@ -32,48 +25,55 @@ def test_tide_prediction():
 def test_badCoordinates():
     """Nose test based upon invalid coordinates"""
     js = loadJSON()
-    results = TideCoordination(95, 180, js, dtg='2016-05-31-0-1')
+    results = TideCoordination(95, 180, dtg='2016-05-31-0-1')
     results = json.loads(results)
     assert results['currentTide'] == 'null'
 
 
 def test_StationID():
     js = loadJSON()
-    station_id = isAinB(js, -33.85, 151.233)
+    station_id = isAinB('data/UH_SeaLevelStations.csv', -33.85, 151.233)
     station_id = validate4digitNumber(station_id)
     assert str(station_id) == '0333'
 
 
-def isAinB(js, lat, lon):
-    point = Point(float(lon), float(lat))
-    Found = 0
-    count = 0
-    for feature in js['features']:
-        polygon = shape(feature['geometry'])
-        test = 'this is a test'
-        if polygon.contains(point):
-            test = 'this is a test'
-            station_id = feature['properties']['UH_ID_4Dig']
-            #print 'UH Station ID: %s' % feature['properties']['UH_ID_4Dig']
-            #print 'UH Station ID: %s' % station_id
-            Found = 1
-            count += 1
-            return str(station_id)
-    # if no result is returned, reverse the coordinates because latitude and longitude are probably mixed up
-    if Found == 0:
-        point = Point(float(lat), float(lon))
-        for feature in js['features']:
-            polygon = shape(feature['geometry'])
-            if polygon.contains(point):
-                Found = 1
-                station_id = feature['properties']['UH_ID_4Dig']
-                #print 'UH Station ID: %s' % feature['properties']['UH_ID_4Dig']
-                #print 'UH Station ID: %s' % station_id
-                return str(station_id)
-    if Found == 0:
-        print 'Result not found.  Please verify your points and try again.  Points should be in decimal degrees of latitude and longitude'
+def calc_xyDistance(x1,y1,x2,y2):
+	x1 = float(x1)
+	y1 = float(y1)
+	x2 = float(x2)
+	y2 = float(y2)
+	dist = ((y2-y1)**2 +(x2-x1)**2)**0.5
+	return dist #units are the same as the coordinate system
+
+
+def isAinB(csv, lat, lon):
+    """simple script that identifies the nearest tide station for estimating harmonic constituents"""
+    f = open(csv, 'r')
+    text = f.readlines()
+    f.close()
+    minValue = 180
+    station = '-9999'
+    lat,lon = float(lat),float(lon)
+    if lat > 90:
         return '-9999'
-    print count
+    if lon > 180:
+        return '-9999'
+    if lat < -90:
+        return '-9999'
+    if lon < -180:
+        return '-9999'
+    for line in text:
+        temp = line.split(',')
+        try:
+            a,b = float(temp[5]),float(temp[6])
+        except:
+            print temp[5], temp[6]
+        dist = calc_xyDistance(lat,lon,a,b)
+        if dist <= minValue:
+             minValue = dist
+             station = str(temp[1])
+    return station
+
 
 
 def validate4digitNumber(inString,nDigits=4):
@@ -96,8 +96,8 @@ def createNullResults():
     return outJSON
 
 
-def TideCoordination(lat, lon, js, dtg=None,data_dir='data/'):
-    station_id = isAinB(js, lat, lon)
+def TideCoordination(lat, lon, dtg=None,data_dir='data/'):
+    station_id = isAinB('data/UH_SeaLevelStations.csv', lat, lon)
     station_id = validate4digitNumber(station_id)
     if station_id == '-9999':
         outJSON = createNullResults()
@@ -130,7 +130,7 @@ def predictTides_v3(station_id, dtg=None, data_dir='data/'):
         dtg = datetime.strptime(dtg, '%Y-%m-%d-%H-%M')
     heights = []
     t = []
-    f = getHistoricTides_fromFile(station_id, data_dir='data')
+    f = getHistoricTides_fromFile(station_id, data_dir=data_dir)
     for line in f:
         values = line.split(',')
         try:
@@ -167,7 +167,7 @@ def predictTides_v3(station_id, dtg=None, data_dir='data/'):
     return outJSON
 
 
-def loadJSON(filePath='/data/StationLookup.json'):
+def loadJSON(filePath='data/StationLookup.json'):
     js = json.loads(open(filePath).read())
     return js
 

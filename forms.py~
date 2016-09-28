@@ -1,0 +1,9 @@
+from flask_wtf import Form
+from wtforms import StringField
+from wtforms.validators import DataRequired
+
+
+class TideForm(Form):
+    lat = StringField('lat', validators=[DataRequired()])
+    lon = StringField('lon', validators=[DataRequired()])
+    dtg = StringField('dtg', validators=[DataRequired()])

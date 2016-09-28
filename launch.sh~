@@ -1,5 +1,1 @@
-gdal_translate --version
-geos-config --version
-which geos-config 
-./install.sh
-python run.py
+./startappgunicorn

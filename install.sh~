@@ -1,3 +1,0 @@
-apt-get install libgeos-dev
-pip install Shapely
-

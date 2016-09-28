@@ -1,0 +1,23 @@
+<!-- extend from base layout -->
+{% extends "base.html" %}
+
+{% block content %}
+  <h1>Tide Prediction</h1>
+  <h2>Please enter coordinates and date-time group</h2>
+  <form action="" method="POST" name="tides">
+      {{ form.hidden_tag() }}
+      <p>
+          Latitude (Decimal Degrees):<br>
+          {{ form.lat(size=10) }}<br>
+      </p>
+      <p>
+          Longitude (Decimal Degrees):<br>
+          {{ form.lon(size=10) }}<br>
+      </p>
+      <p>
+          Date-Time Group (YYYY-mm-DD-YY-HH-MM):<br>
+          {{ form.dtg(size=19) }}<br>
+      </p>
+      <p><input type="submit" value="Calculate"></p>
+  </form>
+{% endblock %}

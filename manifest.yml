@@ -1,7 +1,7 @@
 # Manifest for use in CloudFoundry
 ---
 applications:
-- name: bf_TidePrediction
+- name: bf-TidePrediction
   memory: 2048M
   disk_quota: 2048M
   instances: 1

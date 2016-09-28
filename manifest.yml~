@@ -1,11 +1,11 @@
 # Manifest for use in CloudFoundry
 ---
 applications:
-- name: bf_TidePrediction
+- name: bf-TidePrediction-batch
   memory: 2048M
   disk_quota: 2048M
   instances: 1
-  buildpack: https://github.com/kennethreitz/conda-buildpack
+  buildpack: https://github.com/heroku/heroku-buildpack-python
   random-route: true
   command: ~/launch.sh
 

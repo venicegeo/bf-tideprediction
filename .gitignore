@@ -1,0 +1,4 @@
+__pycache__
+*.pyc
+fdh.sqlite
+data/fdh.sqlite

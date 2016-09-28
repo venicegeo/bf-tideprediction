@@ -26,6 +26,7 @@ data/
 pytides/
 templates/
 vendor/
+config.py
 forms.py
 tides.py
 Procfile

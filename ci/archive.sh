@@ -8,8 +8,10 @@ source $root/ci/vars.sh
 
 ## Install Dependencies ########################################################
 
+pip_binary=$(which pip || which pip3)
+
 mkdir -p vendor
-pip3 install --download vendor -r requirements.txt
+$pip_binary install --download vendor -r requirements.txt
 
 tar -xzvf fdh.sqlite.tar.gz -C data
 

@@ -258,10 +258,15 @@ TIDE_MODEL = build_tide_models(tide_model)
 @app.route('/', methods=['GET', 'POST'])
 def get_tide():
     form = TideForm()
-    if request.method == 'POST' and form.validate_on_submit():
-        return jsonify(tide_coordination(float(form.lat.data),
-                                         float(form.lon.data),
-                                         form.dtg.data))
+    if request.method == 'POST':
+        try:
+            return jsonify(tide_coordination(float(form.lat.data),
+                                             float(form.lon.data),
+                                             form.dtg.data))
+        except: 
+            return render_template('index.html',
+                                   title='Tide Prediction',
+                                   form=form)
 
     return render_template('index.html',
                            title='Tide Prediction',

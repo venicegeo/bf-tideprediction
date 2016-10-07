@@ -1,3 +1,0 @@
-#!/bin/bash
-
-/usr/bin/time curl -vX POST http://127.0.0.1:8080/tides -d @api_test_data.json --header "Content-Type: application/json"

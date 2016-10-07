@@ -1,3 +1,0 @@
-#!/bin/bash
-
-gunicorn -t 360 -w 5 -b 0.0.0.0:$PORT tides:app

@@ -1,3 +1,0 @@
-#!/bin/bash
-
-/usr/bin/time curl -vX POST http://TidePrediction.stage.geointservices.io/tides -d @api_test_data.json --header "Content-Type: application/json"

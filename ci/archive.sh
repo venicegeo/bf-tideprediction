@@ -33,13 +33,8 @@ tar -xzvf fdh.sqlite.tar.gz -C data
 ## Build #######################################################################
 
 target_files="
-data/
-pytides/
-templates/
-vendor/
-config.py
-forms.py
-tides.py
+bftideprediction
+vendor
 Procfile
 requirements.txt
 "

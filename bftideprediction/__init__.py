@@ -1,6 +1,17 @@
+"""
+Copyright 2016, RadiantBlue Technologies, Inc.
+
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
+"""
+
 import json
 import math
 import sqlite3
+import os.path
 from datetime import datetime
 from cStringIO import StringIO
 
@@ -11,10 +22,10 @@ from flask import (Flask, request,
 import numpy as np
 
 from pytides.tide import Tide
-from forms import TideForm
+from bftideprediction.forms import TideForm
 
 app = Flask(__name__)
-app.config.from_object('config')
+app.config.from_object('bftideprediction.config')
 
 
 def init_db(db_file, in_mem=False):
@@ -247,11 +258,11 @@ def tide_coordination(lat, lon, dtg=None):
 # production if enough memory exists for
 # each worker to load the database (~250MB)
 
-db_file = './data/fdh.sqlite'
+db_file = os.path.join(os.path.dirname(__file__), 'data/fdh.sqlite')
 DB_CURSOR = init_db(db_file, in_mem=False)
 
 # build the tide model
-tide_model = './data/tidemodel.pkl'
+tide_model = os.path.join(os.path.dirname(__file__), 'data/tidemodel.pkl')
 TIDE_MODEL = build_tide_models(tide_model)
 
 
@@ -263,7 +274,7 @@ def get_tide():
             return jsonify(tide_coordination(float(form.lat.data),
                                              float(form.lon.data),
                                              form.dtg.data))
-        except: 
+        except:
             return render_template('index.html',
                                    title='Tide Prediction',
                                    form=form)

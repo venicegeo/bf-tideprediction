@@ -1,4 +1,5 @@
 click==6.6
+coverage==4.2
 decorator==4.0.10
 dill==0.2.5
 Flask==0.11.1

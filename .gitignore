@@ -4,3 +4,5 @@ fdh.sqlite
 bf-tideprediction.zip
 vendor
 .env
+.coverage
+report

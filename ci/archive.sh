@@ -24,7 +24,7 @@ popd
 # HACK HACK HACK HACK HACK HACK HACK HACK HACK
 
 # Extract historical tidal data
-tar -xzvf fdh.sqlite.tar.gz -C data
+./scripts/extract-historical-data.sh
 
 
 ## Run Tests ###################################################################

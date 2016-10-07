@@ -8,10 +8,14 @@ source $root/ci/vars.sh
 
 ## Install Dependencies ########################################################
 
-pip_binary=$(which pip || which pip3)
+# Create or enter virtual environment
+if [ ! -f .env/bin/activate ]; then
+  virtualenv --python=python2.7 .env
+fi
+. .env/bin/activate
 
 # Fetch libraries
-$pip_binary install -r requirements.txt
+pip install -r requirements.txt
 
 # Extract historical tidal data
 ./scripts/extract-historical-data.sh

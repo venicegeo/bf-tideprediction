@@ -22,9 +22,6 @@ pip download -d vendor -r requirements.txt
 ./scripts/extract-historical-data.sh
 
 
-## Run Tests ###################################################################
-
-
 ## Build #######################################################################
 
 target_files="

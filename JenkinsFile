@@ -1,0 +1,8 @@
+node ('sl61') {
+  stage 'Pip Reqs'
+  sh 'pip install -r requirements.txt'
+  ./scripts/extract-historical-data.sh
+  stage 'Fortify Scan'
+  sh "/opt/hp_fortify_sca/bin/sourceanalyzer -b ${env.BUILD_NUMBER} ./{*.py,**/*.py}" 
+  sh "/opt/hp_fortify_sca/bin/sourceanalyzer -b ${env.BUILD_NUMBER}  -scan -Xmx1G -f fortifyResults-${env.BUILD_NUMBER}.fpr"
+}

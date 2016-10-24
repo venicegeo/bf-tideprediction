@@ -1,6 +1,5 @@
 node ('sl61') {
   stage 'Pip Reqs'
-  sh 'ls 1>&2'
   sh 'pip install -r ./requirements.txt'
   sh "./scripts/extract-historical-data.sh"
   stage 'Fortify Scan'

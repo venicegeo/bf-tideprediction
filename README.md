@@ -1,4 +1,4 @@
-# bf_tideprediction
+# bf-tideprediction
 
 A simple service for predicting tides.
 

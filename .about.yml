@@ -6,7 +6,7 @@
 
 # This is a short name of your project that can be used as a URL slug.
 # (required)
-name: bf_tideprediction
+name: bf-tideprediction
 
 # This is the display name of your project. (required)
 full_name: Beachfront Tide Prediction Service
@@ -43,7 +43,7 @@ testable: true
 licenses:
   pz-gateway:
     name: Apache-2.0
-    url: https://github.com/venicegeo/bf_tideprediction/blob/master/LICENSE.txt
+    url: https://github.com/venicegeo/bf-tideprediction/blob/master/LICENSE.txt
 
 # Who is the partner for your project? (Use the full name of the partner
 # documented here:
@@ -92,10 +92,10 @@ parent: VeniceGeo
 #   text: Anchor text for the link
 #   category: Type of the link
 links:
-- url: http://bf-tideprediction.geointservices.io/
+- url: https://bf-tideprediction.geointservices.io/
   text: Tide Service UI
   category: simple web frontend
-- url: http://bf-tideprediction.geointservices.io/tides
+- url: https://bf-tideprediction.geointservices.io/tides
   text: Tide Service (API Endpoint)
   category: api
 

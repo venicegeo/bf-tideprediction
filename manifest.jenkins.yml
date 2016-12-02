@@ -1,7 +1,7 @@
 ---
 applications:
 - name: bf-tideprediction
-  host: tideprediction
+  host: bf-tideprediction
   path: bf-tideprediction.zip
   memory: 2G
   disk_quota: 2G

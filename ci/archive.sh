@@ -21,6 +21,14 @@ pip download -d vendor -r requirements.txt
 # Extract historical tidal data
 ./scripts/extract-historical-data.sh
 
+# HACK HACK HACK HACK HACK HACK HACK HACK HACK
+# FIXME -- apparently still needed as sl61/2 pulls the cp27mu binary instead of cp27m
+pushd vendor
+rm -f numpy* scipy*
+curl -O "https://pypi.python.org/packages/b3/46/3aecb4feaa2ef3c4071a9a853a35a2695f7677ebc7731c3cb3d291c6d188/scipy-0.18.0-cp27-cp27m-manylinux1_x86_64.whl"
+curl -O "https://pypi.python.org/packages/ae/34/1b5838ae482992fcc4f2d00ced6bb1dde58f4abb352a4af65a9f13ce9dd7/numpy-1.11.1-cp27-cp27m-manylinux1_x86_64.whl"
+popd
+# HACK HACK HACK HACK HACK HACK HACK HACK HACK
 
 ## Build #######################################################################
 

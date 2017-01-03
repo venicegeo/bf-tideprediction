@@ -11,7 +11,7 @@ intervals==0.8.0
 itsdangerous==0.24
 Jinja2==2.8
 MarkupSafe==0.23
-numpy>=1.11.1
+numpy==1.11.1
 pytides==0.0.4
 scipy==0.18.0
 six==1.10.0

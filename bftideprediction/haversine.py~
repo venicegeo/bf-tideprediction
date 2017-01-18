@@ -94,5 +94,5 @@ if __name__ == '__main__':
     min_tide = float(min(my_prediction))/1000
     max_tide = float(max(my_prediction))/1000
 
-    print(tide_level, min_tide, max_tide)
-    print(len(my_prediction))
+    print tide_level, min_tide, max_tide
+    print len(my_prediction)

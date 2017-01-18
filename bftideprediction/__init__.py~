@@ -170,16 +170,16 @@ def nearest_station(lat, lon):
     if lat > 90 or lat < -90 or lon < -180 or lon > 180:
         return '-9999'
 
-    curCosLat = math.cos(lat * math.pi / 180.0)
-    curSinLat = math.sin(lat * math.pi / 180.0)
-    curCosLon = math.cos(lon * math.pi / 180.0)
-    curSinLon = math.sin(lon * math.pi / 180.0)
+    CUR_cos_lat = math.cos(lat * math.pi / 180.0)
+    CUR_sin_lat = math.sin(lat * math.pi / 180.0)
+    CUR_cos_lon = math.cos(lon * math.pi / 180.0)
+    CUR_sin_lon = math.sin(lon * math.pi / 180.0)
 
     t = (
-        curSinLat,
-        curCosLat,
-        curCosLon,
-        curSinLon
+        CUR_sin_lat,
+        CUR_cos_lat,
+        CUR_cos_lon,
+        CUR_sin_lon
         )
 
     command = (

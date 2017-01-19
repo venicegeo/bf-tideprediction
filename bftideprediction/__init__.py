@@ -117,7 +117,10 @@ def predict_tides(station, dtg=None):
     :type dtg: String -- "Y-m-d-H-M"
     """
     if dtg is None:
-        prediction_t0 = datetime.now()
+        dtg = datetime.now()
+        dtg = datetime.strftime(dtg, '%Y-%m-%d-%H-%M')
+        prediction_t0 = datetime.strptime(dtg,
+                                          '%Y-%m-%d-%H-%M')
     else:
         prediction_t0 = datetime.strptime(dtg,
                                           '%Y-%m-%d-%H-%M')
@@ -221,7 +224,7 @@ def tide_coordination(lat, lon, dtg=None):
     station_id = nearest_station(lat, lon)
 
     if station_id == '-9999':
-        return json.dumps(out)
+        return out
 
     mint, maxt, ctide, ctime = predict_tides(station_id, dtg)
 

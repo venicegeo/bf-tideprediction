@@ -71,6 +71,12 @@ def test_tide_coordination_null():
     error_range = 0.5
     check = 0
     ctide = results['currentTide']
-    assert ctide == 'null'
+    out = {
+        'minimumTide24Hours': 'null',
+        'maximumTide24Hours': 'null',
+        'currentTide': 'null'
+    }
+    check = json.dumps(out)
+    assert check == ctide
 
 

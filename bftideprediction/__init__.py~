@@ -1,5 +1,5 @@
 """
-Copyright 2016, RadiantBlue Technologies, Inc.
+Copyright 2017, RadiantBlue Technologies, Inc.
 Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at
 http://www.apache.org/licenses/LICENSE-2.0
 Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
@@ -117,7 +117,10 @@ def predict_tides(station, dtg=None):
     :type dtg: String -- "Y-m-d-H-M"
     """
     if dtg is None:
-        prediction_t0 = datetime.now()
+        dtg = datetime.now()
+        dtg = datetime.strftime(dtg, '%Y-%m-%d-%H-%M')
+        prediction_t0 = datetime.strptime(dtg,
+                                          '%Y-%m-%d-%H-%M')
     else:
         prediction_t0 = datetime.strptime(dtg,
                                           '%Y-%m-%d-%H-%M')
@@ -212,16 +215,16 @@ def tide_coordination(lat, lon, dtg=None):
     :type lon: float
     :returns: the tide data -- json
     """
-    out = {
+    out = [
         'minimumTide24Hours': 'null',
         'maximumTide24Hours': 'null',
         'currentTide': 'null'
-    }
+    ]
 
     station_id = nearest_station(lat, lon)
 
     if station_id == '-9999':
-        return json.dumps(out)
+        return out
 
     mint, maxt, ctide, ctime = predict_tides(station_id, dtg)
 

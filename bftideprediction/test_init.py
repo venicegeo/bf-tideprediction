@@ -40,13 +40,23 @@ def test_all_stations():
     assert b == (1,)
 
 
-def test_nearest_station_null():
+def test_nearest_station_latnull():
     station_id = tides.nearest_station(None, 151.233)
     assert station_id == '-9999'
 
 
-def test_nearest_station_badlon():
-    station_id = tides.nearest_station(-33.85, 351.233)
+def test_nearest_station_lonnull():
+    station_id = tides.nearest_station(None, None)
+    assert station_id == '-9999'
+
+
+def test_nearest_station_toohigh():
+    station_id = tides.nearest_station(95, 351.233)
+    assert station_id == '-9999'
+
+
+def test_nearest_station_toolow():
+    station_id = tides.nearest_station(-95, -351.233)
     assert station_id == '-9999'
 
 

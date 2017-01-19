@@ -31,7 +31,7 @@ def test_all_stations():
     assert b == (1,)
 
 
-def test_predict_tides():
+def test_tide_coordination():
     """Nose test based upon verified historic tide data"""
     results = tides.tide_coordination(-33.85, 151.233, dtg='2016-05-31-0-1')
     lookupValue = 0.525

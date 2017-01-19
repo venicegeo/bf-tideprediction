@@ -113,7 +113,7 @@ def build_tide_models(tide_model_file):
     # we are doing it like this because the instantiated Tide
     # is apparently not pickelable even using dill, also
     # we can't build a model if v is None.
-    return {k: (Tide(model=v, radians=False) if v is not None else v)
+    return {k: Tide(model=v, radians=False) if v is not None else v
             for (k, v) in tide_models.iteritems()}
 
 
@@ -170,16 +170,16 @@ def nearest_station(lat, lon):
     if lat > 90 or lat < -90 or lon < -180 or lon > 180:
         return '-9999'
 
-    curCosLat = math.cos(lat * math.pi / 180.0)
-    curSinLat = math.sin(lat * math.pi / 180.0)
-    curCosLon = math.cos(lon * math.pi / 180.0)
-    curSinLon = math.sin(lon * math.pi / 180.0)
+    cur_cos_lat = math.cos(lat * math.pi / 180.0)
+    cur_sin_lat = math.sin(lat * math.pi / 180.0)
+    cur_cos_lon = math.cos(lon * math.pi / 180.0)
+    cur_sin_lon = math.sin(lon * math.pi / 180.0)
 
     t = (
-        curSinLat,
-        curCosLat,
-        curCosLon,
-        curSinLon
+        cur_sin_lat,
+        cur_cos_lat,
+        cur_cos_lon,
+        cur_sin_lon
         )
 
     command = (
@@ -295,25 +295,26 @@ def get_tides():
         # if we have something posted...
         # process it
         content = request.json
-        if 'locations' in content.keys():
-            for d in content['locations']:
-                # we have to have these to proceed
-                try:
-                    lat = d['lat']
-                    lon = d['lon']
-                    dtg = d['dtg']
-                except KeyError:
-                    lat = None
-                    lon = None
-                    dtg = None
+        if 'locations' not in content.keys():
+            return
+        for d in content['locations']:
+            # we have to have these to proceed
+            try:
+                lat = d['lat']
+                lon = d['lon']
+                dtg = d['dtg']
+            except KeyError:
+                lat = None
+                lon = None
+                dtg = None
 
-                # just add the results back into
-                # the original json and return it.
-                d['results'] = tc(float(lat),
-                                  float(lon),
-                                  dtg)
+            # just add the results back into
+            # the original json and return it.
+            d['results'] = tc(float(lat),
+                              float(lon),
+                              dtg)
 
-            return jsonify(content)
+        return jsonify(content)
 
     # If we didn't get what we want out
     # of it, return a sample of what the

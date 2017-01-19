@@ -68,10 +68,10 @@ for f in files:
                              VALUES (?, ?, ?, ?, ?, ?, ?);\
                              """, to_db)
             except IndexError:
-                print row
+                print(row)
                 continue
 
         conn.commit()
     except (csv.Error, UnicodeDecodeError):
-        print "error", f
+        print("error", f)
         continue

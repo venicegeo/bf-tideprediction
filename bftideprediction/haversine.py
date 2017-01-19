@@ -45,16 +45,16 @@ def init_db(in_memory=False):
 
 
 def closest_station(lat, lon):
-    curCosLat = math.cos(lat * math.pi / 180.0)
-    curSinLat = math.sin(lat * math.pi / 180.0)
-    curCosLon = math.cos(lon * math.pi / 180.0)
-    curSinLon = math.sin(lon * math.pi / 180.0)
+    cur_cos_lat = math.cos(lat * math.pi / 180.0)
+    cur_sin_lat = math.sin(lat * math.pi / 180.0)
+    cur_cos_lon = math.cos(lon * math.pi / 180.0)
+    cur_sin_lon = math.sin(lon * math.pi / 180.0)
 
     t = (
-        curSinLat,
-        curCosLat,
-        curCosLon,
-        curSinLon
+        cur_sin_lat,
+        cur_cos_lat,
+        cur_cos_lon,
+        cur_sin_lon
         )
 
     command = (

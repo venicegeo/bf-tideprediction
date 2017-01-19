@@ -28,10 +28,10 @@ for f in files:
                 to_db = [unicode(date, "utf8"), unicode(row[4], "utf8")]
                 curs.execute("INSERT INTO FDH (date, mm) VALUES (?, ?);", to_db)
             except IndexError:
-                print row
+                print(row)
                 continue
 
         conn.commit()
     except (csv.Error, UnicodeDecodeError):
-        print "error", f
+        print("error", f)
         continue

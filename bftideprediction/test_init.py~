@@ -36,12 +36,11 @@ def test_station_data():
     a = tides.station_data(333)
     assert a[0] == (u'2014-1-1-0', 1545.0)
 
-@raises(ValueError)
+
 def test_build_tide_model():
     a = tides.station_data(333)
     b = tides.build_tide_model(a)
-    b = tides.build_tide_model(None)
-    #assert b is None
+
 
 
 def test_all_stations():

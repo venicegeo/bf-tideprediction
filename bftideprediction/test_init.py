@@ -3,7 +3,6 @@ import bftideprediction.__init__ as tides
 import json
 from datetime import datetime
 import os
-from nose.tools import *
 
 
 def test_predict_tides():

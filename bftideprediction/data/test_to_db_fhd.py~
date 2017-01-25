@@ -19,14 +19,3 @@ def test_to_db_fhd_Except():
         os.remove(test_file)
 
 
-def test_to_db_main():
-    test_file = 'test/fixtures/fdh_test.sqlite'
-    if os.path.exists(test_file):
-        os.remove(test_file)
-    exe_string = 'python bftideprediction/data/to_db_fhd.py -f test/fixtures/fdh_test.sqlite -o test/fixtures'
-    check = os.system(exe_string)
-    #assert check == 0
-
-#def test_usage():
-#    check = to_db_fhd.usage()
-

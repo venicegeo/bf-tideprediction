@@ -43,31 +43,4 @@ def to_db_fhd(out_db, folder_csv):
         conn.commit()
     conn.close()
 
-def usage():
-    print("""
-          Usage:
-          to_db_fhd -f folder_with_csvs -o out_database
-           """
-          )
-    sys.exit(1)
 
-
-if __name__ == '__main__':
-
-    out_db = None
-    folder_csv = None # NEEDS REPLACED
-
-
-    for i in range(len(sys.argv)-1):
-        arg = sys.argv[i]
-        if arg == '-f':
-            folder_csv = sys.argv[i+1]
-        elif arg == '-o':
-            out_db = sys.argv[i+1]
-
-    if folder_csv == None:
-        usage()
-    if out_db == None:
-        usage()
-    to_db_fhd(out_db, folder_csv)
-    sys.exit(0)

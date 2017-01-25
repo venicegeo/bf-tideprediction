@@ -17,7 +17,6 @@ def to_db_fhd(out_db, folder_csv):
     conn = sqlite3.connect(out_db)
     curs = conn.cursor()
     curs.execute("CREATE TABLE FDH (id INTEGER PRIMARY KEY, date DATE, mm FLOAT);")
-    fileList = os.listdir
     search_string = os.path.join(folder_csv, '*csv')
     files = glob.glob(search_string)
 

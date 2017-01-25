@@ -1,5 +1,6 @@
 from bftideprediction.__init__ import predict_tides
 import bftideprediction.__init__ as tides
+import bftideprediction.data.to_db_fhd as to_db_fhd
 import json
 from datetime import datetime
 import os
@@ -27,6 +28,13 @@ def test_predict_tides_no_dtg():
     assert dtg[:4] == now_string[:4]
 
 
+def test_predict_tides_no_model():
+    now = datetime.now()
+    results = predict_tides(9999999999, dtg='2016-05-31-0-1')
+    mint, maxt, ctide, dtg = results
+    assert ctide == 'null'
+
+
 def test_stationid():
     station_id = tides.nearest_station(-33.85, 151.233)
     assert station_id == 333
@@ -40,6 +48,11 @@ def test_build_tide_model():
     a = tides.station_data(333)
     b = tides.build_tide_model(a)
 
+
+def test_build_tide_model_except():
+    a = 'NotModelData'
+    b = tides.build_tide_model(a)
+    assert b == None
 
 
 def test_all_stations():
@@ -96,3 +109,14 @@ def test_init_db_inmem():
     db_file = os.path.join(os.path.dirname(__file__), 'data/fdh.sqlite') 
     conn = tides.init_db(db_file, in_mem=True)
     conn.close()
+
+
+def test_rebuild_models():
+    test_file = 'test/fixtures/fdh_test.sqlite'
+    model_file = 'test/fixtures/fdh_test.pkl'
+    if os.path.exists(model_file):
+        os.remove(model_file)
+    to_db_fhd.to_db_fhd(test_file, 'test/fixtures')
+    conn = tides.init_db('test/fixtures/fdh_test.sqlite')
+    check = tides.build_tide_models(model_file)
+    os.remove(model_file)

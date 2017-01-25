@@ -10,16 +10,25 @@ http://www.apache.org/licenses/LICENSE-2.0
 Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
 """
 
-import glob, csv, sqlite3
-conn = sqlite3.connect("fdh.sqlite")
-curs = conn.cursor()
-curs.execute("CREATE TABLE FDH (id INTEGER PRIMARY KEY, date DATE, mm FLOAT);")
+import glob, csv, sqlite3, os, sys
 
-files = glob.glob("*.csv")
 
-for f in files:
-    try:
-        reader = csv.reader(open(f, 'rU'), delimiter=',')
+def to_db_fhd(out_db, folder_csv):
+    conn = sqlite3.connect(out_db)
+    curs = conn.cursor()
+    curs.execute("CREATE TABLE FDH (id INTEGER PRIMARY KEY, date DATE, mm FLOAT);")
+    fileList = os.listdir
+    search_string = os.path.join(folder_csv, '*csv')
+    files = glob.glob(search_string)
+
+    for f in files:
+        reader = None
+        try:
+            reader = csv.reader(open(f, 'rU'), delimiter=',')
+        except (csv.Error, UnicodeDecodeError):
+            print("error", f)
+            continue
+
         for row in reader:
             # 2013,11,14,8,599
             # Year, Month, Day, Hour, tide level (mm)
@@ -32,6 +41,33 @@ for f in files:
                 continue
 
         conn.commit()
-    except (csv.Error, UnicodeDecodeError):
-        print("error", f)
-        continue
+    conn.close()
+
+def usage():
+    print("""
+          Usage:
+          to_db_fhd -f folder_with_csvs -o out_database
+           """
+          )
+    sys.exit(1)
+
+
+if __name__ == '__main__':
+
+    out_db = None
+    folder_csv = None # NEEDS REPLACED
+
+
+    for i in range(len(sys.argv)-1):
+        arg = sys.argv[i]
+        if arg == '-f':
+            folder_csv = sys.argv[i+1]
+        elif arg == '-o':
+            out_db = sys.argv[i+1]
+
+    if folder_csv == None:
+        usage()
+    if out_db == None:
+        usage()
+    to_db_fhd(out_db, folder_csv)
+    sys.exit(0)

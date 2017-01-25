@@ -10,31 +10,37 @@ http://www.apache.org/licenses/LICENSE-2.0
 Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
 """
 
-import glob, csv, sqlite3
-conn = sqlite3.connect("fdh.sqlite")
-curs = conn.cursor()
-curs.execute("CREATE TABLE FDH (id INTEGER PRIMARY KEY, date DATE, mm FLOAT);")
+import glob, csv, sqlite3, os, sys
 
-files = glob.glob("*.csv")
 
-for f in files:
-    reader = None
-    try:
-        reader = csv.reader(open(f, 'rU'), delimiter=',')
-    except (csv.Error, UnicodeDecodeError):
-        print("error", f)
-        continue
+def to_db_fhd(out_db, folder_csv):
+    conn = sqlite3.connect(out_db)
+    curs = conn.cursor()
+    curs.execute("CREATE TABLE FDH (id INTEGER PRIMARY KEY, date DATE, mm FLOAT);")
+    fileList = os.listdir
+    search_string = os.path.join(folder_csv, '*csv')
+    files = glob.glob(search_string)
 
-    for row in reader:
-        # 2013,11,14,8,599
-        # Year, Month, Day, Hour, tide level (mm)
+    for f in files:
+        reader = None
         try:
-            date = '-'.join(row[:4])
-            to_db = [unicode(date, "utf8"), unicode(row[4], "utf8")]
-            curs.execute("INSERT INTO FDH (date, mm) VALUES (?, ?);", to_db)
-        except IndexError:
-            print(row)
+            reader = csv.reader(open(f, 'rU'), delimiter=',')
+        except (csv.Error, UnicodeDecodeError):
+            print("error", f)
             continue
 
-    conn.commit()
+        for row in reader:
+            # 2013,11,14,8,599
+            # Year, Month, Day, Hour, tide level (mm)
+            try:
+                date = '-'.join(row[:4])
+                to_db = [unicode(date, "utf8"), unicode(row[4], "utf8")]
+                curs.execute("INSERT INTO FDH (date, mm) VALUES (?, ?);", to_db)
+            except IndexError:
+                print(row)
+                continue
+
+        conn.commit()
+    conn.close()
+
 

@@ -59,7 +59,7 @@ def build_tide_model(data):
         dates = [datetime.strptime(date, '%Y-%m-%d-%H') for date in dates]
 
         return Tide.decompose(heights, dates).model
-    except ValueError:
+    except:
         return None
 
 
@@ -129,14 +129,13 @@ def predict_tides(station, dtg=None):
     times = Tide._times(prediction_t0, hours)
 
     # Predict the tides using the Pytides model.
-    model = TIDE_MODEL[station]
-
-    if model is not None:
+    try:
+        model = TIDE_MODEL[station]
         my_prediction = model.at(times)
         ctide = float(my_prediction[0])/1000
         mint = float(min(my_prediction))/1000
         maxt = float(max(my_prediction))/1000
-    else:
+    except:
         ctide = 'null'
         mint = 'null'
         maxt = 'null'

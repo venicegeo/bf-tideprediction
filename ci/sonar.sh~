@@ -23,7 +23,6 @@ pip install -r requirements.txt
 
 ## Run Tests ###################################################################
 
-#coverage run --source=bftideprediction -m unittest discover
-nosetests --with-coverage --cover-erase --cover-package=bftideprediction
+coverage run --source=bftideprediction -m unittest discover
 coverage xml -o report/coverage/coverage.xml
 coverage html -d report/coverage/html

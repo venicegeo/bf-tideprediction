@@ -1,11 +1,11 @@
-import bftideprediction.data.to_db_fhd as to_db_fhd
+import bftideprediction.data.to_db_station as to_db_station
 import os
 
 def test_to_db_fhd():
     test_file = 'test/fixtures/fdh_test.sqlite'
     if os.path.exists(test_file):
         os.remove(test_file)
-    to_db_fhd.to_db_fhd(test_file, 'test/fixtures')
+    to_db_station.to_db_station(test_file, 'test/fixtures')
     assert os.path.exists(test_file)
 
 
@@ -13,8 +13,7 @@ def test_to_db_fhd_except():
     test_file = 'test/fixtures/fdh_test.sqlite'
     if os.path.exists(test_file):
         os.remove(test_file)
-    to_db_fhd.to_db_fhd(test_file, 'NOTREAL/NOTREAL/POSSIBLYREAL')
+    to_db_station.to_db_station(test_file, 'NOTREAL/NOTREAL/POSSIBLYREAL')
     if os.path.exists(test_file):
         os.remove(test_file)
-
 

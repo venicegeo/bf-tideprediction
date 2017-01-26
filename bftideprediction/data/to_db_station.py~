@@ -17,64 +17,67 @@ import os
 import math
 from posixpath import basename
 
-conn = sqlite3.connect("fdh.sqlite")
-curs = conn.cursor()
-curs.execute("""
-             CREATE TABLE STATIONS \
-             (id INTEGER PRIMARY KEY, \
-             lat FLOAT, \
-             lon FLOAT, \
-             cos_lat FLOAT, \
-             sin_lat FLOAT, \
-             cos_lon FLOAT, \
-             sin_lon FLOAT, \
-             station STRING);""")
 
-files = glob.glob("./sealevelstations.csv")
+def to_db_station(out_db, sealevelstations_csv):
+    conn = sqlite3.connect(out_db)
+    curs = conn.cursor()
+    curs.execute("""
+                 CREATE TABLE STATIONS \
+                 (id INTEGER PRIMARY KEY, \
+                 lat FLOAT, \
+                 lon FLOAT, \
+                 cos_lat FLOAT, \
+                 sin_lat FLOAT, \
+                 cos_lon FLOAT, \
+                 sin_lon FLOAT, \
+                 station STRING);""")
 
-for f in files:
-    reader = None
-    try:
-        reader = csv.reader(open(f, 'rU'), delimiter=',')
+    search_string = os.path.join(sealevelstations_csv, '*csv')    
+    files = glob.glob(search_string)
 
-    except (csv.Error, UnicodeDecodeError):
-        print("error", f)
-        continue
-
-    for row in reader:
-
+    for f in files:
+        reader = None
         try:
-            station = os.path.splitext(basename(row[-1]))[0][3:]
-            lat = float(row[5])
-            lon = float(row[6])
+            reader = csv.reader(open(f, 'rU'), delimiter=',')
 
-            cos_lat = math.cos(lat * math.pi / 180.0)
-            sin_lat = math.sin(lat * math.pi / 180.0)
-
-            cos_lon = math.cos(lon * math.pi / 180.0)
-            sin_lon = math.sin(lon * math.pi / 180.0)
-
-            to_db = [
-                unicode(str(lat), "utf8"),
-                unicode(str(lon), "utf8"),
-
-                unicode(str(cos_lat), "utf8"),
-                unicode(str(sin_lat), "utf8"),
-
-                unicode(str(cos_lon), "utf8"),
-                unicode(str(sin_lon), "utf8"),
-
-                unicode(station, "utf8")
-            ]
-
-            curs.execute("""
-                         INSERT INTO STATIONS \
-                         (lat, lon, cos_lat, sin_lat,\
-                         cos_lon, sin_lon, station) \
-                         VALUES (?, ?, ?, ?, ?, ?, ?);\
-                         """, to_db)
-        except IndexError:
-            print(row)
+        except (csv.Error, UnicodeDecodeError):
+            print("error", f)
             continue
 
-        conn.commit()
+        for row in reader:
+
+            try:
+                station = os.path.splitext(basename(row[-1]))[0][3:]
+                lat = float(row[5])
+                lon = float(row[6])
+
+                cos_lat = math.cos(lat * math.pi / 180.0)
+                sin_lat = math.sin(lat * math.pi / 180.0)
+
+                cos_lon = math.cos(lon * math.pi / 180.0)
+                sin_lon = math.sin(lon * math.pi / 180.0)
+
+                to_db = [
+                    unicode(str(lat), "utf8"),
+                    unicode(str(lon), "utf8"),
+
+                    unicode(str(cos_lat), "utf8"),
+                    unicode(str(sin_lat), "utf8"),
+
+                    unicode(str(cos_lon), "utf8"),
+                    unicode(str(sin_lon), "utf8"),
+
+                    unicode(station, "utf8")
+                ]
+
+                curs.execute("""
+                             INSERT INTO STATIONS \
+                             (lat, lon, cos_lat, sin_lat,\
+                             cos_lon, sin_lon, station) \
+                             VALUES (?, ?, ?, ?, ?, ?, ?);\
+                             """, to_db)
+            except IndexError:
+                print(row)
+                continue
+
+            conn.commit()

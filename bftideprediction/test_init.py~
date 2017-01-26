@@ -111,12 +111,12 @@ def test_init_db_inmem():
     conn.close()
 
 
-def test_rebuild_models():
-    test_file = 'test/fixtures/fdh_test.sqlite'
-    model_file = 'test/fixtures/fdh_test.pkl'
-    if os.path.exists(model_file):
-        os.remove(model_file)
-    to_db_fhd.to_db_fhd(test_file, 'test/fixtures')
-    conn = tides.init_db('test/fixtures/fdh_test.sqlite')
-    check = tides.build_tide_models(model_file)
-    os.remove(model_file)
+#def test_rebuild_models():
+#    test_file = 'test/fixtures/fdh_test.sqlite'
+#    model_file = 'test/fixtures/fdh_test.pkl'
+#    if os.path.exists(model_file):
+#       os.remove(model_file)
+#    to_db_fhd.to_db_fhd(test_file, 'test/fixtures')
+#    conn = tides.init_db('test/fixtures/fdh_test.sqlite')
+#    check = tides.build_tide_models(model_file)
+#    os.remove(model_file)

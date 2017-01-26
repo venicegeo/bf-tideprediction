@@ -25,7 +25,7 @@ pip install -r requirements.txt
 ### Run Unit Tests
 
 ```
-python -m unittest discover
+nosetests --with-coverage --cover-erase --cover-package=bftideprediction
 ```
 
 ### Run Integration Tests

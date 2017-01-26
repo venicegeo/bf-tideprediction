@@ -2,7 +2,6 @@ import bftideprediction.data.to_db_fhd as to_db_fhd
 import os
 
 def test_to_db_fhd():
-    #test_file = 'test/fixtures/fdh_test.sqlite'
     test_file = '/home/barnabas/Documents/work/ATO/edits/bf-tideprediction/test/fixtures/fdh_test.sqlite'
     if os.path.exists(test_file):
         os.remove(test_file)
@@ -10,7 +9,7 @@ def test_to_db_fhd():
     assert os.path.exists(test_file)
 
 
-def test_to_db_fhd_Except():
+def test_to_db_fhd_except():
     test_file = 'test/fixtures/fdh_test.sqlite'
     if os.path.exists(test_file):
         os.remove(test_file)

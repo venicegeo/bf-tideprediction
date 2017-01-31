@@ -7,7 +7,7 @@ node ('sl61') {
     git url: "https://github.com/venicegeo/bf-tideprediction.git"
     sh "pip install --user -r ./requirements.txt"
     sh "./scripts/extract-historical-data.sh"
-  }
+
   stage("Security Scans") {
     withCredentials([[$class: 'StringBinding', credentialsId: '978C467A-2B26-47AE-AD2F-4AFD5A4AF695',     variable: 'THREADFIXKEY']]) {
       parallel(

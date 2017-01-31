@@ -17,8 +17,9 @@ node ('sl61') {
           sh "sh "/bin/curl -v --insecure -H 'Accept: application/json' -X POST --form file=@fortifyResults-${env.BUILD_NUMBER}.fpr https://threadfix.devops.geointservices.io/rest/applications/67/upload?apiKey=$THREADFIXKEY"
         },
         owaspScan: {
-          sh "echo 'OWASP'"
-        }
+          sh '/opt/dependency-check/bin/dependency-check.sh --project "BF Tide Predecition" --scan "." --format "XML" --enableExperimental'
+          sh "/bin/curl -v --insecure -H 'Accept: application/json' -X POST --form file=@dependency-check-report.xml https://threadfix.devops.geointservices.io/rest/applications/67/upload?apiKey=$THREADFIXKEY"
+        })
       }
     }
   }

@@ -1,6 +1,6 @@
-@library('pipelib@v0.0.1')
+//@library('pipelib@v0.0.1')
 
-def util = new io.venicegeo.pipelib.Util()
+//def util = new io.venicegeo.pipelib.Util()
 
 node ('sl61') {
   stage("Pip Reqs") {

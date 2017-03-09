@@ -273,7 +273,7 @@ TIDE_MODEL = build_tide_models(tide_model)
 def get_tide():
     form = TideForm()
     action = 'Request received to calculate tides for latitude=%s, longitude=%s, dtg=%s'  % (form.lat.data, form.lon.data, form.dtg.data)
-    app.logger.debug('ACTOR:`%s` ACTION:`%s` DTG:`%s`', request.referrer, action, datetime.utcnow().isoformat() + 'Z')
+    app.logger.debug('ACTOR:`%s` ACTION:`%s` DTG:`%s`', request.remote_addr, action, datetime.utcnow().isoformat() + 'Z')
     if request.method == 'POST':
         try:
             return jsonify(tide_coordination(float(form.lat.data),
@@ -300,7 +300,7 @@ def get_tides():
         # if we have something posted...
         # process it
         content = request.json
-        app.logger.debug('ACTOR:`%s` ACTION:`%s` DTG:`%s`', request.referrer, 'Request recieved to calculate tides in batch mode', datetime.utcnow().isoformat() + 'Z')
+        app.logger.debug('ACTOR:`%s` ACTION:`%s` DTG:`%s`', request.remote_addr, 'Request recieved to calculate tides in batch mode', datetime.utcnow().isoformat() + 'Z')
         if 'locations' not in content.keys():
             return
         for d in content['locations']:
@@ -318,7 +318,7 @@ def get_tides():
             # the original json and return it.
 
             action = 'Calculating tides in batch mode  for latitude=%s, longitude=%s, dtg=%s'  % (lat, lon, dtg)
-            app.logger.debug('ACTOR:`%s` ACTION:`%s` DTG:`%s`', request.referrer, action, datetime.utcnow().isoformat() + 'Z')
+            app.logger.debug('ACTOR:`%s` ACTION:`%s` DTG:`%s`', request.remote_addr, action, datetime.utcnow().isoformat() + 'Z')
             d['results'] = tc(float(lat),
                               float(lon),
                               dtg)

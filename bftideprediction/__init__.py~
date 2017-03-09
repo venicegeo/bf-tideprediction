@@ -300,6 +300,7 @@ def get_tides():
         # if we have something posted...
         # process it
         content = request.json
+        app.logger.debug('ACTOR:`%s` ACTION:`%s` DTG:`%s`', request.referrer, 'Request recieved to calculate tides in batch mode', datetime.utcnow().isoformat() + 'Z')
         if 'locations' not in content.keys():
             return
         for d in content['locations']:
@@ -315,10 +316,13 @@ def get_tides():
 
             # just add the results back into
             # the original json and return it.
+
+            action = 'Calculating tides in batch mode  for latitude=%s, longitude=%s, dtg=%s'  % (lat, lon, dtg)
+            app.logger.debug('ACTOR:`%s` ACTION:`%s` DTG:`%s`', request.referrer, action, datetime.utcnow().isoformat() + 'Z')
             d['results'] = tc(float(lat),
                               float(lon),
                               dtg)
-
+        app.logger.debug('ACTOR:`%s` ACTION:`%s` DTG:`%s`', 'bf-tideprediction', 'Returning results', datetime.utcnow().isoformat() + 'Z')
         return jsonify(content)
 
     # If we didn't get what we want out

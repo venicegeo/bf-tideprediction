@@ -11,25 +11,29 @@ import sqlite3
 import os.path
 from datetime import datetime
 from cStringIO import StringIO
+import logging
 
 import dill
 from flask import (Flask, request,
                    render_template,
                    jsonify)
 import numpy as np
+import sys
 
 from pytides.tide import Tide
 from bftideprediction.forms import TideForm
 
 app = Flask(__name__)
 app.config.from_object('bftideprediction.config')
-
+app.logger.addHandler(logging.StreamHandler(sys.stdout))
+app.logger.setLevel(logging.DEBUG)
 
 def init_db(db_file, in_mem=False):
     """Get DB ready by.
     Can also load existing database into memory.
     :returns: sqlite cursor
     """
+    app.logger.debug('ACTOR:`%s` ACTION:`%s` DTG:`%s`', 'bf-tidepredicition', 'Initializing Model Database', datetime.utcnow().isoformat() + 'Z')
     conn = sqlite3.connect(db_file)
 
     if in_mem is True:
@@ -53,6 +57,7 @@ def build_tide_model(data):
     :param data: list of tuples [(date, height),...)]
     :returns: Pytides model or None if data insufficient.
     """
+    app.logger.debug('ACTOR:`%s` ACTION:`%s` DTG:`%s`', 'bf-tidepredicition', 'Building tide model from data', datetime.utcnow().isoformat() + 'Z')
     # historic dates and heights
     try:
         dates, heights = zip(*data)
@@ -67,7 +72,7 @@ def build_tide_models(tide_model_file):
     """Build models for all stations.
     :returns: Dict -- {'station_id': model, ...}
     """
-
+    
     # We try to read the pre fitted tidal models
     # if they don't exists we create them
     # this model for all the stations
@@ -75,6 +80,8 @@ def build_tide_models(tide_model_file):
     # if the database of station data is updated
     # to re-fit the model.
 
+    action = 'Building tide models from file %s' % tide_model_file
+    app.logger.debug('ACTOR:`%s` ACTION:`%s` DTG:`%s`', 'bf-tidepredicition', action, datetime.utcnow().isoformat() + 'Z')
     try:
         with open(tide_model_file, 'rb') as tm:
             tide_models = dill.load(tm)
@@ -116,6 +123,9 @@ def predict_tides(station, dtg=None):
     :param dtg: Date time group.
     :type dtg: String -- "Y-m-d-H-M"
     """
+
+    action = 'Predicting tides for station %s and dtg %s' % (station, dtg)
+    app.logger.debug('ACTOR:`%s` ACTION:`%s` DTG:`%s`', 'bf-tidepredicition', action, datetime.utcnow().isoformat() + 'Z')
     if dtg is None:
         dtg = datetime.now()
         dtg = datetime.strftime(dtg, '%Y-%m-%d-%H-%M')
@@ -153,6 +163,8 @@ def nearest_station(lat, lon):
     :type lon: float
     :returns: Station id -- String
     """
+    action = 'Identifying nearest station for latitude:%s and longitude:%s' % (lat,lon)
+    app.logger.debug('ACTOR:`%s` ACTION:`%s` DTG:`%s`', 'bf-tidepredicition', action, datetime.utcnow().isoformat() + 'Z')
     if lat is None or lon is None:
         return '-9999'
 
@@ -190,6 +202,9 @@ def station_data(station_id):
     :type station_id: String
     :returns: List of date, height tuples -- [(date, height),...]
     """
+
+    action = 'Retrieving station data for station_id: %s' % station_id
+    app.logger.debug('ACTOR:`%s` ACTION:`%s` DTG:`%s`', 'bf-tidepredicition', action, datetime.utcnow().isoformat() + 'Z')
     DB_CURSOR.execute('select date,mm from fdh where station=? order by date',
                       (str(station_id),))
 
@@ -201,6 +216,8 @@ def all_stations():
     Used for pre-building models predictive models
     for each station.
     """
+
+    app.logger.debug('ACTOR:`%s` ACTION:`%s` DTG:`%s`', 'bf-tidepredicition', 'Retrieving station data for all stations', datetime.utcnow().isoformat() + 'Z')
     command = 'select station from stations;'
     DB_CURSOR.execute(command)
     return DB_CURSOR.fetchall()
@@ -214,6 +231,9 @@ def tide_coordination(lat, lon, dtg=None):
     :type lon: float
     :returns: the tide data -- json
     """
+
+    action = 'Launching tide_coordination for latitude:%s longitude:%s and dtg:%s' % (lat,lon,dtg)
+    app.logger.debug('ACTOR:`%s` ACTION:`%s` DTG:`%s`', 'bf-tidepredicition', action, datetime.utcnow().isoformat() + 'Z')
     out = {
         'minimumTide24Hours': 'null',
         'maximumTide24Hours': 'null',
@@ -252,6 +272,8 @@ TIDE_MODEL = build_tide_models(tide_model)
 @app.route('/', methods=['GET', 'POST'])
 def get_tide():
     form = TideForm()
+    action = 'Request received to calculate tides for latitude=%s, longitude=%s, dtg=%s'  % (form.lat.data, form.lon.data, form.dtg.data)
+    app.logger.debug('ACTOR:`%s` ACTION:`%s` DTG:`%s`', request.referrer, action, datetime.utcnow().isoformat() + 'Z')
     if request.method == 'POST':
         try:
             return jsonify(tide_coordination(float(form.lat.data),
@@ -278,6 +300,7 @@ def get_tides():
         # if we have something posted...
         # process it
         content = request.json
+        app.logger.debug('ACTOR:`%s` ACTION:`%s` DTG:`%s`', request.referrer, 'Request recieved to calculate tides in batch mode', datetime.utcnow().isoformat() + 'Z')
         if 'locations' not in content.keys():
             return
         for d in content['locations']:
@@ -293,10 +316,13 @@ def get_tides():
 
             # just add the results back into
             # the original json and return it.
+
+            action = 'Calculating tides in batch mode  for latitude=%s, longitude=%s, dtg=%s'  % (lat, lon, dtg)
+            app.logger.debug('ACTOR:`%s` ACTION:`%s` DTG:`%s`', request.referrer, action, datetime.utcnow().isoformat() + 'Z')
             d['results'] = tc(float(lat),
                               float(lon),
                               dtg)
-
+        app.logger.debug('ACTOR:`%s` ACTION:`%s` DTG:`%s`', 'bf-tideprediction', 'Returning results', datetime.utcnow().isoformat() + 'Z')
         return jsonify(content)
 
     # If we didn't get what we want out

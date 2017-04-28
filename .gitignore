@@ -6,3 +6,5 @@ vendor
 .env
 .coverage
 report
+.vagrant
+venv/

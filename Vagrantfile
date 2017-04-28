@@ -9,7 +9,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 		bftides.vm.box = "ubuntu/trusty64"
 		bftides.vm.hostname = "bf-tideprediction.dev"
 		bftides.vm.provision :shell, path: "vagrant/vagrant-bootstrap.sh"
-		bftides.vm.network "forwarded_port", guest: 80, host: 8081
+		bftides.vm.network "forwarded_port", guest: 5000, host: 5000
 		bftides.vm.provider "virtualbox" do |vb|
 	      vb.customize [
 	      	"modifyvm", :id,

@@ -7,3 +7,4 @@ vendor
 .coverage
 report
 .vagrant
+venv/

@@ -121,9 +121,7 @@ def predict_tides(station, dtg=None):
     :param dtg: Date time group.
     :type dtg: String -- "Y-m-d-H-M"
     """
-
-    action = 'Predicting tides for station %s and dtg %s' % (station, dtg)
-    app.logger.debug('ACTOR:`%s` ACTION:`%s` DTG:`%s`', 'bf-tidepredicition', action, datetime.utcnow().isoformat() + 'Z')
+    logAudit(severity=7, actor="bf-tideprediction", action="predictTides", actee=station, message='Predicting tides for station %s and dtg %s' % (station, dtg))
     if dtg is None:
         dtg = datetime.now()
         dtg = datetime.strftime(dtg, '%Y-%m-%d-%H-%M')
@@ -161,8 +159,7 @@ def nearest_station(lat, lon):
     :type lon: float
     :returns: Station id -- String
     """
-    action = 'Identifying nearest station for latitude:%s and longitude:%s' % (lat,lon)
-    app.logger.debug('ACTOR:`%s` ACTION:`%s` DTG:`%s`', 'bf-tidepredicition', action, datetime.utcnow().isoformat() + 'Z')
+    logAudit(severity=7, actor="bf-tideprediction", action="identifyNearestStation", message='Identifying nearest station for latitude:%s and longitude:%s' % (lat,lon))
     if lat is None or lon is None:
         return '-9999'
 
@@ -200,9 +197,7 @@ def station_data(station_id):
     :type station_id: String
     :returns: List of date, height tuples -- [(date, height),...]
     """
-
-    action = 'Retrieving station data for station_id: %s' % station_id
-    app.logger.debug('ACTOR:`%s` ACTION:`%s` DTG:`%s`', 'bf-tidepredicition', action, datetime.utcnow().isoformat() + 'Z')
+    logAudit(severity=7, actor="bf-tideprediction", action="retrieveStationData", actee=station_id, message='Retrieving station data for station_id: %s' % station_id)
     DB_CURSOR.execute('select date,mm from fdh where station=? order by date',
                       (str(station_id),))
 
@@ -214,8 +209,7 @@ def all_stations():
     Used for pre-building models predictive models
     for each station.
     """
-
-    app.logger.debug('ACTOR:`%s` ACTION:`%s` DTG:`%s`', 'bf-tidepredicition', 'Retrieving station data for all stations', datetime.utcnow().isoformat() + 'Z')
+    logAudit(severity=7, actor="bf-tideprediction", action="retrieveAllStationData", message="Retrieving station data for all stations")
     command = 'select station from stations;'
     DB_CURSOR.execute(command)
     return DB_CURSOR.fetchall()

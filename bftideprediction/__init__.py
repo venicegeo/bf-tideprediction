@@ -33,7 +33,7 @@ def init_db(db_file, in_mem=False):
     Can also load existing database into memory.
     :returns: sqlite cursor
     """
-    app.logger.debug('ACTOR:`%s` ACTION:`%s` DTG:`%s`', 'bf-tidepredicition', 'Initializing Model Database', datetime.utcnow().isoformat() + 'Z')
+    logAudit(severity=7, actor="bf-tideprediction", action="initializingModelDatabase", actee="database", message="Initializing Model Database")
     conn = sqlite3.connect(db_file)
 
     if in_mem is True:
@@ -57,14 +57,14 @@ def build_tide_model(data):
     :param data: list of tuples [(date, height),...)]
     :returns: Pytides model or None if data insufficient.
     """
-    app.logger.debug('ACTOR:`%s` ACTION:`%s` DTG:`%s`', 'bf-tidepredicition', 'Building tide model from data', datetime.utcnow().isoformat() + 'Z')
+    logAudit(severity=7, actor="bf-tideprediction", action="buildingTideModel", message="Building Tide Model From Data")
     # historic dates and heights
     try:
         dates, heights = zip(*data)
         dates = [datetime.strptime(date, '%Y-%m-%d-%H') for date in dates]
-
         return Tide.decompose(heights, dates).model
     except:
+        logAudit(severity=2, actor="bf-tideprediction", action="failedTideModel", message="A Tide Model Failed to Build")
         return None
 
 
@@ -79,9 +79,7 @@ def build_tide_models(tide_model_file):
     # is very tiny, so run locally
     # if the database of station data is updated
     # to re-fit the model.
-
-    action = 'Building tide models from file %s' % tide_model_file
-    app.logger.debug('ACTOR:`%s` ACTION:`%s` DTG:`%s`', 'bf-tidepredicition', action, datetime.utcnow().isoformat() + 'Z')
+    logAudit(severity=7, actor="bf-tideprediction", action="buildingTideModels", actee=tide_model_file, message="Building tide models from file %s" % tide_model_file)
     try:
         with open(tide_model_file, 'rb') as tm:
             tide_models = dill.load(tm)
@@ -343,3 +341,19 @@ def get_tides():
             },
         ]
     })
+
+def logAudit(severity, actor, action, actee, message):
+    """
+    Outputs a log message in the RFC5424 format, per Audit Requirements
+    """
+    app.logger.debug('<%s>1 %s %s %s %s %s [pzaudit@48851 actor="%s" action="%s" actee="%s"] %s',
+        1 * 8 + int(severity),
+        datetime.utcnow().isoformat() + 'Z',
+        '-',                    # Hostname
+        'bf-tideprediction',    # App name
+        '-',                    # PID
+        '-',                    # Message ID
+        actor,
+        action,
+        actee,
+        message)

@@ -223,9 +223,7 @@ def tide_coordination(lat, lon, dtg=None):
     :type lon: float
     :returns: the tide data -- json
     """
-
-    action = 'Launching tide_coordination for latitude:%s longitude:%s and dtg:%s' % (lat,lon,dtg)
-    app.logger.debug('ACTOR:`%s` ACTION:`%s` DTG:`%s`', 'bf-tidepredicition', action, datetime.utcnow().isoformat() + 'Z')
+    logAudit(severity=7, actor="bf-tideprediction", action="getTideCoordination", message='Launching tide_coordination for latitude:%s longitude:%s and dtg:%s' % (lat,lon,dtg))
     out = {
         'minimumTide24Hours': 'null',
         'maximumTide24Hours': 'null',
@@ -264,8 +262,8 @@ TIDE_MODEL = build_tide_models(tide_model)
 @app.route('/', methods=['GET', 'POST'])
 def get_tide():
     form = TideForm()
-    action = 'Request received to calculate tides for latitude=%s, longitude=%s, dtg=%s'  % (form.lat.data, form.lon.data, form.dtg.data)
-    app.logger.debug('ACTOR:`%s` ACTION:`%s` DTG:`%s`', request.remote_addr, action, datetime.utcnow().isoformat() + 'Z')
+    logAudit(severity=7, actor="bf-tideprediction", action="receivedTideRequest", message='Request received to calculate tides for latitude=%s, longitude=%s, dtg=%s'  % (form.lat.data, form.lon.data, form.dtg.data))
+
     if request.method == 'POST':
         try:
             return jsonify(tide_coordination(float(form.lat.data),
@@ -292,7 +290,7 @@ def get_tides():
         # if we have something posted...
         # process it
         content = request.json
-        app.logger.debug('ACTOR:`%s` ACTION:`%s` DTG:`%s`', request.remote_addr, 'Request recieved to calculate tides in batch mode', datetime.utcnow().isoformat() + 'Z')
+        logAudit(severity=7, actor=request.remote_addr, action="receiveBatchTidesRequest", message='Request recieved to calculate tides in batch mode')
         if 'locations' not in content.keys():
             return
         for d in content['locations']:
@@ -308,13 +306,11 @@ def get_tides():
 
             # just add the results back into
             # the original json and return it.
-
-            action = 'Calculating tides in batch mode  for latitude=%s, longitude=%s, dtg=%s'  % (lat, lon, dtg)
-            app.logger.debug('ACTOR:`%s` ACTION:`%s` DTG:`%s`', request.remote_addr, action, datetime.utcnow().isoformat() + 'Z')
+            logAudit(severity=7, actor=request.remote_addr, action="calculatingBatchTides", message='Calculating tides in batch mode  for latitude=%s, longitude=%s, dtg=%s'  % (lat, lon, dtg))
             d['results'] = tc(float(lat),
                               float(lon),
                               dtg)
-        app.logger.debug('ACTOR:`%s` ACTION:`%s` DTG:`%s`', 'bf-tideprediction', 'Returning results', datetime.utcnow().isoformat() + 'Z')
+        logAudit(severity=7, actor=request.remote_addr, action="calculatedBatchTides", message="Returning Batch Tide Results")
         return jsonify(content)
 
     # If we didn't get what we want out

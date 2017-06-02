@@ -28,6 +28,22 @@ app.config.from_object('bftideprediction.config')
 app.logger.addHandler(logging.StreamHandler(sys.stdout))
 app.logger.setLevel(logging.DEBUG)
 
+def logAudit(severity, actor, action, actee, message):
+    """
+    Outputs a log message in the RFC5424 format, per Audit Requirements
+    """
+    app.logger.debug('<%s>1 %s %s %s %s %s [pzaudit@48851 actor="%s" action="%s" actee="%s"] %s',
+        1 * 8 + int(severity),
+        datetime.utcnow().isoformat() + 'Z',
+        '-',                    # Hostname
+        'bf-tideprediction',    # App name
+        '-',                    # PID
+        '-',                    # Message ID
+        actor,
+        action,
+        actee,
+        message)
+
 def init_db(db_file, in_mem=False):
     """Get DB ready by.
     Can also load existing database into memory.
@@ -332,18 +348,3 @@ def get_tides():
         ]
     })
 
-def logAudit(severity, actor, action, actee, message):
-    """
-    Outputs a log message in the RFC5424 format, per Audit Requirements
-    """
-    app.logger.debug('<%s>1 %s %s %s %s %s [pzaudit@48851 actor="%s" action="%s" actee="%s"] %s',
-        1 * 8 + int(severity),
-        datetime.utcnow().isoformat() + 'Z',
-        '-',                    # Hostname
-        'bf-tideprediction',    # App name
-        '-',                    # PID
-        '-',                    # Message ID
-        actor,
-        action,
-        actee,
-        message)

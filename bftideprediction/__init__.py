@@ -28,7 +28,7 @@ app.config.from_object('bftideprediction.config')
 app.logger.addHandler(logging.StreamHandler(sys.stdout))
 app.logger.setLevel(logging.DEBUG)
 
-def logAudit(severity, actor, action, actee, message):
+def logAudit(severity, actor, action, actee="", message=""):
     """
     Outputs a log message in the RFC5424 format, per Audit Requirements
     """
@@ -177,10 +177,10 @@ def nearest_station(lat, lon):
     """
     logAudit(severity=7, actor="bf-tideprediction", action="identifyNearestStation", message='Identifying nearest station for latitude:%s and longitude:%s' % (lat,lon))
     if lat is None or lon is None:
-        return '-9999'
+        return '-9999', 'Invalid input for Latitude or Longitude.'
 
     if lat > 90 or lat < -90 or lon < -180 or lon > 180:
-        return '-9999'
+		return '-9999', 'Latitude or Longitude out of range.'
 
     cur_cos_lat = math.cos(lat * math.pi / 180.0)
     cur_sin_lat = math.sin(lat * math.pi / 180.0)
@@ -204,7 +204,7 @@ def nearest_station(lat, lon):
     DB_CURSOR.execute(command)
     station, _ = DB_CURSOR.fetchone()
 
-    return station
+    return station, None
 
 
 def station_data(station_id):
@@ -246,10 +246,11 @@ def tide_coordination(lat, lon, dtg=None):
         'currentTide': 'null'
     }
 
-    station_id = nearest_station(lat, lon)
+    station_id, message = nearest_station(lat, lon)
 
     if station_id == '-9999':
-        return out
+		m = {"message":message}
+		return m, True
 
     mint, maxt, ctide, ctime = predict_tides(station_id, dtg)
 
@@ -257,7 +258,7 @@ def tide_coordination(lat, lon, dtg=None):
     out['maximumTide24Hours'] = maxt
     out['currentTide'] = ctide
 
-    return out
+    return out, False
 
 
 # Below this is the API
@@ -281,18 +282,19 @@ def get_tide():
     logAudit(severity=7, actor="bf-tideprediction", action="receivedTideRequest", message='Request received to calculate tides for latitude=%s, longitude=%s, dtg=%s'  % (form.lat.data, form.lon.data, form.dtg.data))
 
     if request.method == 'POST':
-        try:
-            return jsonify(tide_coordination(float(form.lat.data),
-                                             float(form.lon.data),
-                                             form.dtg.data))
-        except:
-            return render_template('index.html',
-                                   title='Tide Prediction',
-                                   form=form)
-
-    return render_template('index.html',
-                           title='Tide Prediction',
-                           form=form)
+		try:
+			res, err = tide_coordination(float(form.lat.data),float(form.lon.data),form.dtg.data)
+			response = jsonify(res)
+			if err:
+				response.status_code = 400
+				render_template('index.html', title='Tide Prediction', form=form)
+			return response
+		except Exception, e:
+			render_template('index.html', title='Tide Prediction', form=form)
+			response = jsonify({"message": "Error encountered - " + str(e)})
+			response.status_code = 400
+			return response
+    return render_template('index.html', title='Tide Prediction', form=form)
 
 
 @app.route('/tides', methods=['GET', 'POST'])
@@ -323,9 +325,11 @@ def get_tides():
             # just add the results back into
             # the original json and return it.
             logAudit(severity=7, actor=request.remote_addr, action="calculatingBatchTides", message='Calculating tides in batch mode  for latitude=%s, longitude=%s, dtg=%s'  % (lat, lon, dtg))
-            d['results'] = tc(float(lat),
-                              float(lon),
-                              dtg)
+            d['results'], err = tc(float(lat), float(lon), dtg)
+            if err:
+                response = jsonify(d['results'])
+                response.status_code = 400
+                return response
         logAudit(severity=7, actor=request.remote_addr, action="calculatedBatchTides", message="Returning Batch Tide Results")
         return jsonify(content)
 

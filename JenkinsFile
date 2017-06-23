@@ -59,7 +59,13 @@ node {
       sh "/opt/hp_fortify_sca/bin/sourceanalyzer -b ${env.BUILD_NUMBER}  -scan -Xmx1G -f fortifyResults-${env.BUILD_NUMBER}.fpr"
       sh "/bin/curl -v --insecure -H 'Accept: application/json' -X POST --form file=@fortifyResults-${env.BUILD_NUMBER}.fpr ${env.THREADFIX_URL}/rest/applications/${env.THREADFIX_ID}/upload?apiKey=${THREADFIX_KEY}"
     }
-    // TODO Does Sonar do Python?
+    // Sonar
+    withCredentials([string(credentialsId: "${env.SONAR_TOKEN}", variable: 'USERNAME')]) {
+      withEnv(["HOME=${root}"]) {
+        def projectId = "venicegeo:piazza:bf-tideprediction"
+        sh "${mvn}/bin/mvn sonar:sonar -Dmaven.repo.local=${root} -Dsonar.host.url=${env.SONAR_URL} -Dsonar.projectKey=${projectId} -Dsonar.projectName=${projectId} -Dsonar.login=${USERNAME} -P nga"
+      }
+    }
   }  
 
   stage("Security Scan Pass/Fail") {

@@ -1,27 +1,219 @@
-//@library('pipelib@v0.0.1')
+#!/usr/bin/groovy
 
-//def util = new io.venicegeo.pipelib.Util()
+node {
+  def root = pwd()
+  def mvn = tool 'M3'
+  def nodejs = tool 'NodeJS_6'
 
-node ('sl61') {
-  stage("Pip Reqs") {
-    git url: "https://github.com/venicegeo/bf-tideprediction.git"
-    sh "pip install --user -r ./requirements.txt"
-    sh "./scripts/extract-historical-data.sh"
+  stage('Setup') {
+    deleteDir()
+    if(env.GITLAB_CREDS) {
+      git url: "${env.GIT_URL}", branch: "${env.GIT_BRANCH}", credentialsId: "${env.GITLAB_CREDS}"
+    } else {
+      git url: "${env.GIT_URL}", branch: "${env.GIT_BRANCH}"
+    }
+  }
 
-  stage("Security Scans") {
-    withCredentials([[$class: 'StringBinding', credentialsId: '978C467A-2B26-47AE-AD2F-4AFD5A4AF695',     variable: 'THREADFIXKEY']]) {
-      parallel(
-        fortifyScan: {
-          sh "/opt/hp_fortify_sca/bin/sourceanalyzer -b ${env.BUILD_NUMBER} ./{*.py,**/*.py}"
-          sh "/opt/hp_fortify_sca/bin/sourceanalyzer -b ${env.BUILD_NUMBER}  -scan -Xmx1G -f fortifyResults-${env.BUILD_NUMBER}.fpr"
-          sh "/bin/curl -v --insecure -H 'Accept: application/json' -X POST --form file=@fortifyResults-${env.BUILD_NUMBER}.fpr https://threadfix.devops.geointservices.io/rest/applications/67/upload?apiKey=$THREADFIXKEY"
-        },
-        owaspScan: {
-          sh '/opt/dependency-check/bin/dependency-check.sh --project "BF Tide Predecition" --scan "." --format "XML" --enableExperimental'
-          sh "/bin/curl -v --insecure -H 'Accept: application/json' -X POST --form file=@dependency-check-report.xml https://threadfix.devops.geointservices.io/rest/applications/67/upload?apiKey=$THREADFIXKEY"
-        })
+  def appvers = sh(script: "git describe --long --tags --always | sed 's/\\./-/'g", returnStdout: true)
+  appvers = appvers.trim()
+  def appName = "bf-tideprediction-${appvers}"
+
+  stage('Archive') {
+    // Build
+    sh "./ci/archive.sh"
+    // Check if exists already
+    def getDependencyStatus = sh(script: """mvn -X --settings ~/.m2/settings.xml dependency:get \
+      -Dmaven.repo.local="${root}/.m2/repository" \
+      -DrepositoryId=nexus \
+      -DartifactId=bf-tideprediction \
+      -Dversion=${appvers} \
+      -DgroupId="org.venice.beachfront" \
+      -Dpackaging=zip \
+      -DremoteRepositories="nexus::default::${env.ARTIFACT_STORAGE_DEPLOY_URL}" \
+    """, returnStatus: true)
+    echo "dependency status = ${getDependencyStatus}"
+    if (getDependencyStatus == 0) {
+      echo "Artifact version ${appvers} exists in Nexus, nothing to do"
+    } else {
+     sh """mvn -X --settings ~/.m2/settings.xml deploy:deploy-file -Dfile=${root}/bf-tideprediction.zip \
+        -DrepositoryId=nexus \
+        -Durl="${env.ARTIFACT_STORAGE_DEPLOY_URL}" \
+        -DgroupId="org.venice.beachfront" \
+        -DgeneratePom=false \
+        -Dpackaging=zip \
+        -Dmaven.repo.local="${root}/.m2/repository" \
+        -DartifactId=bf-tideprediction \
+        -Dversion=${appvers}
+      """
+    }
+  }
+
+  stage('Scans') {
+    withCredentials([[$class: "StringBinding", credentialsId: "${env.THREADFIX_API_KEY}", variable: "THREADFIX_KEY"]]) {
+      // Dependency Checker
+      sh "/jslave/dependency-check/dependency-check/bin/dependency-check.sh --version"
+      sh '/jslave/dependency-check/dependency-check/bin/dependency-check.sh --project "bf-tideprediction" --scan "." --format "XML" --enableExperimental --disableBundleAudit'
+      sh "/bin/curl -v --insecure -H 'Accept: application/json' -X POST --form file=@dependency-check-report.xml ${env.THREADFIX_URL}/rest/applications/${env.THREADFIX_ID}/upload?apiKey=${THREADFIX_KEY}"
+      // Fortify
+      sh "/opt/hp_fortify_sca/bin/sourceanalyzer -b ${env.BUILD_NUMBER} ./{*.py,**/*.py}"
+      sh "/opt/hp_fortify_sca/bin/sourceanalyzer -b ${env.BUILD_NUMBER}  -scan -Xmx1G -f fortifyResults-${env.BUILD_NUMBER}.fpr"
+      sh "/bin/curl -v --insecure -H 'Accept: application/json' -X POST --form file=@fortifyResults-${env.BUILD_NUMBER}.fpr ${env.THREADFIX_URL}/rest/applications/${env.THREADFIX_ID}/upload?apiKey=${THREADFIX_KEY}"
+    }
+    // Sonar
+    withCredentials([string(credentialsId: "${env.SONAR_TOKEN}", variable: 'USERNAME')]) {
+      withEnv(["HOME=${root}"]) {
+        def projectId = "venicegeo:beachfront:bf-tideprediction"
+        sh "${mvn}/bin/mvn sonar:sonar -Dmaven.repo.local=${root} -Dsonar.host.url=${env.SONAR_URL} -Dsonar.projectKey=${projectId} -Dsonar.projectName=${projectId} -Dsonar.login=${USERNAME} -P nga"
+      }
+    }
+  }  
+
+  stage("Security Scan Pass/Fail") {
+    // Query threadfix and block if any highs/crits are found
+    // TODO: Put back in
+    /*sh "mkdir -p sspf-pkg"
+    dir("./sspf-pkg") {
+      withCredentials([[$class: 'StringBinding', credentialsId: "${env.THREADFIX_API_KEY}", variable: 'THREADFIX_KEY']]) {
+        sh "curl -L ${env.SSPF_PACKAGE} -o sspf.zip"
+        sh "unzip sspf.zip"
+        dir("./sspf-master/sspf") {
+          sh "/bin/curl --fail --silent ${env.THREADFIX_URL}/rest/applications/${THREADFIX_ID}?apiKey=${THREADFIX_KEY} | ./sspf.py"
+        }
+      }
+    }*/
+  }  
+
+  stage ('Int Deploy') {
+    if(!fileExists('.cf')) {
+      sh "mkdir -p .cf"
+    }
+    withEnv(['CF_HOME=.cf']) {
+      withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: "${env.PCF_CREDS}", usernameVariable: 'CFUSER', passwordVariable: 'CFPASS']]) {
+        sh "cf api ${env.PCF_API_ENDPOINT}"
+        sh "cf auth ${CFUSER} ${CFPASS}"
+        sh "cf target -o ${env.PCF_ORG} -s ${env.PHASE_ONE_PCF_SPACE}"
+        sh "cf push ${appName} -f manifest.jenkins.yml --hostname ${appName} -d ${env.PHASE_ONE_PCF_DOMAIN} --no-start"
+        sh "cf set-env ${appName} SPACE ${env.PHASE_ONE_PCF_SPACE}"
+        sh "cf set-env ${appName} DOMAIN ${env.PHASE_ONE_PCF_DOMAIN}"
+        sh "cf start ${appName}"
+      }
+    }
+    withCredentials([[$class: 'StringBinding', credentialsId: "${env.THREADFIX_API_KEY}", variable: 'THREADFIX_KEY']]) {
+      sh "mkdir -p ${root}/zap-out"
+      sh """${zapHome}/zap.sh -cmd \
+        -quickout ${root}/zap-out/zap.xml \
+        -quickurl https://${appName}.${env.PHASE_ONE_PCF_DOMAIN} \
+      """
+      sh "cat ${root}/zap-out/zap.xml"
+      sh "/bin/curl -v --insecure -H 'Accept: application/json' -X POST --form file=@${root}/zap-out/zap.xml ${env.THREADFIX_URL}/rest/applications/${THREADFIX_ID}/upload?apiKey=${THREADFIX_KEY}"
+    }
+    withEnv(['CF_HOME=.cf']) {
+      withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: "${env.PCF_CREDS}", usernameVariable: 'CFUSER', passwordVariable: 'CFPASS']]) {
+        sh "cf api ${env.PCF_API_ENDPOINT}"
+        sh "cf auth ${CFUSER} ${CFPASS}"
+        sh "cf target -o ${env.PCF_ORG} -s ${env.PHASE_ONE_PCF_SPACE}"
+        def legacyAppNames = sh(script: "cf routes | grep \"bf-tideprediction \" | awk '{print \$4}'", returnStdout: true)
+        sh "cf map-route ${appName} ${env.PHASE_ONE_PCF_DOMAIN} --hostname bf-tideprediction"
+        // Remove Legacy applications
+        for (Object legacyApp : legacyAppNames.trim().tokenize(',')) {
+          def legacyAppName = legacyApp.toString().trim()
+          if (legacyAppName != appName) {
+            sh "cf unmap-route ${legacyAppName} ${env.PHASE_ONE_PCF_DOMAIN} --hostname ${legacyAppName}"
+            sh "cf delete -f ${legacyAppName}"
+          }
+        }
       }
     }
   }
+
+  if (!params.SKIP_INTEGRATION_TESTS) {
+    stage('Phase One Integration Tests') {
+      if(!fileExists("integration-tests")) {
+        sh "mkdir -p integration-tests"
+      }
+      // Clone Test Repository
+      withCredentials([file(credentialsId: "${POSTMAN_SECRET_FILE}", variable: 'POSTMAN_FILE')]) {
+        withEnv(["PATH+=${root}/integration-tests/node_modules/newman/bin:${nodejs}/bin", "PCF_SPACE=${env.PHASE_ONE_PCF_SPACE}", "HOME=${WORKSPACE}"]) {
+          dir ("integration-tests") {
+            if(env.GITLAB_CREDS) {
+              git url: "${env.INTEGRATION_GIT_URL}", branch: "${env.INTEGRATION_GIT_BRANCH}", credentialsId: "${env.GITLAB_CREDS}"
+            } else {
+              git url: "${env.INTEGRATION_GIT_URL}", branch: "${env.INTEGRATION_GIT_BRANCH}"
+            }
+            sh "npm install newman@2"
+            sh "ci/beachfront_integration_tests.sh"
+          }
+        }
+      }
+    }
+  }
+
+  if(params.DEPLOY_PHASE_TWO) {
+    stage ('Stage Deploy') {
+      if(!fileExists('.cf')) {
+        sh "mkdir -p .cf"
+      }
+      withEnv(['CF_HOME=.cf']) {
+        withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: "${env.PCF_CREDS}", usernameVariable: 'CFUSER', passwordVariable: 'CFPASS']]) {
+          sh "cf api ${env.PCF_API_ENDPOINT}"
+          sh "cf auth ${CFUSER} ${CFPASS}"
+          sh "cf target -o ${env.PCF_ORG} -s ${env.PHASE_TWO_PCF_SPACE}"
+          sh "cf push ${appName} -f manifest.jenkins.yml --hostname ${appName} -d ${env.PHASE_TWO_PCF_DOMAIN} --no-start"
+          sh "cf set-env ${appName} SPACE ${env.PHASE_TWO_PCF_SPACE}"
+          sh "cf set-env ${appName} DOMAIN ${env.PHASE_TWO_PCF_DOMAIN}"
+          sh "cf start ${appName}"
+        }
+      }
+      withCredentials([[$class: 'StringBinding', credentialsId: "${env.THREADFIX_API_KEY}", variable: 'THREADFIX_KEY']]) {
+        sh "mkdir -p ${root}/zap-out"
+        sh """${zapHome}/zap.sh -cmd \
+          -quickout ${root}/zap-out/zap.xml \
+          -quickurl https://${appName}.${env.PHASE_TWO_PCF_DOMAIN} \
+        """
+        sh "cat ${root}/zap-out/zap.xml"
+        sh "/bin/curl -v --insecure -H 'Accept: application/json' -X POST --form file=@${root}/zap-out/zap.xml ${env.THREADFIX_URL}/rest/applications/${THREADFIX_ID}/upload?apiKey=${THREADFIX_KEY}"
+      }
+      withEnv(['CF_HOME=.cf']) {
+        withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: "${env.PCF_CREDS}", usernameVariable: 'CFUSER', passwordVariable: 'CFPASS']]) {
+          sh "cf api ${env.PCF_API_ENDPOINT}"
+          sh "cf auth ${CFUSER} ${CFPASS}"
+          sh "cf target -o ${env.PCF_ORG} -s ${env.PHASE_TWO_PCF_SPACE}"
+          def legacyAppNames = sh(script: "cf routes | grep \"bf-tideprediction \" | awk '{print \$4}'", returnStdout: true)
+          sh "cf map-route ${appName} ${env.PHASE_TWO_PCF_DOMAIN} --hostname bf-tideprediction"
+          // Remove Legacy applications
+          for (Object legacyApp : legacyAppNames.trim().tokenize(',')) {
+            def legacyAppName = legacyApp.toString().trim()
+            if (legacyAppName != appName) {
+              sh "cf unmap-route ${legacyAppName} ${env.PHASE_TWO_PCF_DOMAIN} --hostname ${legacyAppName}"
+              sh "cf delete -f ${legacyAppName}"
+            }
+          }
+        }
+      }
+    }
+
+    if (!params.SKIP_INTEGRATION_TESTS) {
+      stage('Phase Two Integration Tests') {
+        if(!fileExists("integration-tests")) {
+          sh "mkdir -p integration-tests"
+        }
+        // Clone Test Repository
+        withCredentials([file(credentialsId: "${POSTMAN_SECRET_FILE}", variable: 'POSTMAN_FILE')]) {
+          withEnv(["PATH+=${root}/integration-tests/node_modules/newman/bin:${nodejs}/bin", "PCF_SPACE=${env.PHASE_TWO_PCF_SPACE}", "HOME=${WORKSPACE}"]) {
+            dir ("integration-tests") {
+              if(env.GITLAB_CREDS) {
+                git url: "${env.INTEGRATION_GIT_URL}", branch: "${env.INTEGRATION_GIT_BRANCH}", credentialsId: "${env.GITLAB_CREDS}"
+              } else {
+                git url: "${env.INTEGRATION_GIT_URL}", branch: "${env.INTEGRATION_GIT_BRANCH}"
+              }
+              sh "npm install newman@2"
+              sh "ci/beachfront_integration_tests.sh"
+            }
+          }
+        }
+      }
+    }
+  }
+
 }
 

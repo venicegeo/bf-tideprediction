@@ -193,7 +193,7 @@ node {
     }
 
     if (!params.SKIP_INTEGRATION_TESTS) {
-      stage('Phase One Integration Tests') {
+      stage('Phase Two Integration Tests') {
         if(!fileExists("integration-tests")) {
           sh "mkdir -p integration-tests"
         }

@@ -62,7 +62,7 @@ node {
     // Sonar
     withCredentials([string(credentialsId: "${env.SONAR_TOKEN}", variable: 'USERNAME')]) {
       withEnv(["HOME=${root}"]) {
-        def projectId = "venicegeo:piazza:bf-tideprediction"
+        def projectId = "venicegeo:beachfront:bf-tideprediction"
         sh "${mvn}/bin/mvn sonar:sonar -Dmaven.repo.local=${root} -Dsonar.host.url=${env.SONAR_URL} -Dsonar.projectKey=${projectId} -Dsonar.projectName=${projectId} -Dsonar.login=${USERNAME} -P nga"
       }
     }

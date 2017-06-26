@@ -7,5 +7,8 @@ root=$(pwd -P)
 echo "***Updating conda..***"
 conda update -n root conda-build -y
 conda update --all -y
+
+conda build bf-tideprediction
+
 popd > /dev/null
 cp -r $HOME/miniconda2/conda-bld /$HOME/conda-repo

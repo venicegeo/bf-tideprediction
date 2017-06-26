@@ -28,7 +28,7 @@ app.config.from_object('bftideprediction.config')
 app.logger.addHandler(logging.StreamHandler(sys.stdout))
 app.logger.setLevel(logging.DEBUG)
 
-def logAudit(severity, actor, action, actee, message):
+def logAudit(severity, actor, action, actee="", message):
     """
     Outputs a log message in the RFC5424 format, per Audit Requirements
     """
@@ -278,7 +278,7 @@ TIDE_MODEL = build_tide_models(tide_model)
 @app.route('/', methods=['GET', 'POST'])
 def get_tide():
     form = TideForm()
-    logAudit(severity=7, actor="bf-tideprediction", action="receivedTideRequest", message='Request received to calculate tides for latitude=%s, longitude=%s, dtg=%s'  % (form.lat.data, form.lon.data, form.dtg.data))
+    logAudit(severity=7, actor="bf-tideprediction", action="receivedTideRequest", actee="", message='Request received to calculate tides for latitude=%s, longitude=%s, dtg=%s'  % (form.lat.data, form.lon.data, form.dtg.data))
 
     if request.method == 'POST':
         try:

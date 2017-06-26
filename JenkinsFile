@@ -87,7 +87,7 @@ node {
   }  
 
   stage("Conda Build") {
-    dir("pzsvc-ndwi-repo/docker") {
+    dir("./docker") {
       sh "docker-compose rm -f --all"
       sh "docker-compose up --build --no-color"
     }

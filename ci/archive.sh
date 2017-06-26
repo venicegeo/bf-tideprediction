@@ -36,7 +36,6 @@ target_files="
 bftideprediction
 vendor
 Procfile
-requirements.txt
 "
 
 zip -r ${APP}.${EXT} ${target_files}

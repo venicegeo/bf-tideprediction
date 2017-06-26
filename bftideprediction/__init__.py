@@ -28,7 +28,7 @@ app.config.from_object('bftideprediction.config')
 app.logger.addHandler(logging.StreamHandler(sys.stdout))
 app.logger.setLevel(logging.DEBUG)
 
-def logAudit(severity, actor, action, actee="", message):
+def logAudit(severity, actor, action, message, actee=""):
     """
     Outputs a log message in the RFC5424 format, per Audit Requirements
     """

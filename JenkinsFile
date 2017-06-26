@@ -4,6 +4,7 @@ node {
   def root = pwd()
   def mvn = tool 'M3'
   def nodejs = tool 'NodeJS_6'
+  def zapHome = tool 'ZAProxy_v2_5_0'
 
   stage('Setup') {
     deleteDir()

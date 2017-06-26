@@ -1,6 +1,5 @@
 name: bf-tideprediction
 channels:
-  - https://proxy:proxy@nexus.devops.geointservices.io/content/sites/beachfront-conda/conda-bld
   - conda-forge
   - bioconda
   - defaults

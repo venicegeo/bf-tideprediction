@@ -10,7 +10,6 @@ dependencies:
 - dill==0.2.5
 - Flask==0.11.1
 - Flask-WTF==0.12
-- flask-wtf-alchemy-utils==0.1.0
 - gunicorn==19.6.0
 - infinity==1.4
 - intervals==0.8.0
@@ -29,3 +28,5 @@ dependencies:
 - WTForms==2.1
 - WTForms-Alchemy==0.16.1
 - WTForms-Components==0.10.0
+- pip:
+  - flask-wtf-alchemy-utils==0.1.0

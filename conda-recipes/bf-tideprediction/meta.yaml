@@ -3,7 +3,7 @@ package:
   version: 0.0.1                                                                   
                                                                                    
 source:                                                                            
-  path: ../../bftideprediction                                                        
+  path: ../../bftideprediction
 requirements:                                                                      
   build:                                                                           
     - gcc                                                                          
@@ -16,8 +16,6 @@ requirements:
     - Flask 0.11.1
     - Flask-WTF 0.12
     - gunicorn 19.6.0
-    - infinity 1.3
-    - intervals 0.8.0
     - itsdangerous 0.24
     - Jinja2 2.8
     - MarkupSafe 0.23
@@ -35,6 +33,8 @@ requirements:
     - WTForms-Components 0.10.0
     - pip:
       - flask-wtf-alchemy-utils==0.1.0
+      - intervals 0.8.0
+      - infinity 1.4
                                                                                    
   run:                                                                             
     - Flask                                                                        
@@ -45,6 +45,6 @@ build:
   binary_relocation: False                                                         
                                                                                    
 about:                                                                             
-  home: https://github.com/venicegeo/bf-tidepredcition                             
+  home: https://github.com/venicegeo/bf-tideprediction                             
   summary: "Some desc here"                                                                   
   license: Apache 2.0

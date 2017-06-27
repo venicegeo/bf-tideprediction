@@ -36,6 +36,7 @@ target_files="
 bftideprediction
 vendor
 Procfile
+environment.yml
 "
 
 zip -r ${APP}.${EXT} ${target_files}

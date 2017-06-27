@@ -87,13 +87,6 @@ node {
     }*/
   }  
 
-  stage("Conda Build") {
-    dir("./docker") {
-      sh "docker-compose rm -f --all"
-      sh "docker-compose up --build --no-color"
-    }
-  }
-
   stage ('Int Deploy') {
     if(!fileExists('.cf')) {
       sh "mkdir -p .cf"

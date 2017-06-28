@@ -145,8 +145,7 @@ node {
               git url: "${env.INTEGRATION_GIT_URL}", branch: "${env.INTEGRATION_GIT_BRANCH}"
             }
             sh "npm install newman@2"
-            sh "ls ci -al"
-            sh "ci/beachfront.sh"
+            sh "/bin/bash ci/beachfront.sh"
           }
         }
       }

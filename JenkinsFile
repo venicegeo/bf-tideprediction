@@ -77,7 +77,7 @@ node {
     }*/
         withCredentials([string(credentialsId: "${env.SONAR_TOKEN}", variable: 'USERNAME')]) {
             withEnv(["HOME=${root}"]) {
-                sh """
+                sh """pwd && ls
 		  ${sonar}/bin/sonar-scanner \
                     -Dsonar.python.coverage.reportPath=report/coverage/coverage.xml \
                     -Dsonar.sources=${root}/bftideprediction \

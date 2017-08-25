@@ -5,6 +5,9 @@ node {
   def mvn = tool 'M3'
   def nodejs = tool 'NodeJS_6'
   def zapHome = tool 'ZAProxy_v2_5_0'
+  def fortifyBuild = "bf-tideprediction-${env.BUILD_NUMBER}"
+  def sonar = tool 'SonarQube Scanner 3.0'
+  def projectId = "venicegeo:beachfront:bf-tideprediction"
 
   stage('Setup') {
     deleteDir()
@@ -59,9 +62,9 @@ node {
       sh '/jslave/dependency-check/dependency-check/bin/dependency-check.sh --project "bf-tideprediction" --scan "." --format "XML" --enableExperimental --disableBundleAudit'
       sh "/bin/curl -v --insecure -H 'Accept: application/json' -X POST --form file=@dependency-check-report.xml ${env.THREADFIX_URL}/rest/applications/${env.THREADFIX_ID}/upload?apiKey=${THREADFIX_KEY}"
       // Fortify
-      sh "/opt/hp_fortify_sca/bin/sourceanalyzer -b ${env.BUILD_NUMBER} ./{*.py,**/*.py}"
-      sh "/opt/hp_fortify_sca/bin/sourceanalyzer -b ${env.BUILD_NUMBER}  -scan -Xmx1G -f fortifyResults-${env.BUILD_NUMBER}.fpr"
-      sh "/bin/curl -v --insecure -H 'Accept: application/json' -X POST --form file=@fortifyResults-${env.BUILD_NUMBER}.fpr ${env.THREADFIX_URL}/rest/applications/${env.THREADFIX_ID}/upload?apiKey=${THREADFIX_KEY}"
+      sh "/opt/hp_fortify_sca/bin/sourceanalyzer -b ${fortifyBuild} ./{*.py,**/*.py}"
+      sh "/opt/hp_fortify_sca/bin/sourceanalyzer -b ${fortifyBuild}  -scan -Xmx1G -f fortifyResults-${fortifyBuild}.fpr"
+      sh "/bin/curl -v --insecure -H 'Accept: application/json' -X POST --form file=@fortifyResults-${fortifyBuild}.fpr ${env.THREADFIX_URL}/rest/applications/${env.THREADFIX_ID}/upload?apiKey=${THREADFIX_KEY}"
     }
 
     // TODO Put back in Sonar
@@ -72,6 +75,24 @@ node {
         sh "${mvn}/bin/mvn sonar:sonar -Dmaven.repo.local=${root} -Dsonar.host.url=${env.SONAR_URL} -Dsonar.projectKey=${projectId} -Dsonar.projectName=${projectId} -Dsonar.login=${USERNAME}"// -P nga"
       }
     }*/
+        withCredentials([string(credentialsId: "${env.SONAR_TOKEN}", variable: 'USERNAME')]) {
+            withEnv(["HOME=${root}"]) {
+                sh """
+		  ${sonar}/bin/sonar-scanner \
+                    -Dsonar.python.coverage.reportPath=report/coverage/coverage.xml \
+                    -Dsonar.sources=${root}/bftideprediction \
+		    -Dsonar.tests=${root}/test
+                    -Dsonar.host.url=${env.SONAR_URL} \
+                    -Dsonar.projectKey=${projectId} \
+                    -Dsonar.projectName=${projectId} \
+                    -Dsonar.language=py \
+                    -Dsonar.projectBaseDir=${root} \
+                    -Dsonar.projectVersion=${appvers} \
+                    -Dsonar.login=${USERNAME}
+		  source deactivate
+                """
+            }
+        }
   }  
 
   stage("Security Scan Pass/Fail") {

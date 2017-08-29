@@ -89,7 +89,6 @@ node {
                     -Dsonar.projectBaseDir=${root} \
                     -Dsonar.projectVersion=${appvers} \
                     -Dsonar.login=${USERNAME}
-		  source deactivate
                 """
             }
         }

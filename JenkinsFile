@@ -81,15 +81,15 @@ node {
 		  ${sonar}/bin/sonar-scanner \
                     -Dsonar.python.coverage.reportPath=report/coverage/coverage.xml \
                     -Dsonar.sources=${root}/bftideprediction \
-					-Dsonar.tests=${root}/test
-                    -Dsonar.host.url="${env.SONAR_URL}" \
+					-Dsonar.tests=${root}/test \
+                    -Dsonar.host.url=${env.SONAR_URL} \
                     -Dsonar.projectKey=${projectId} \
                     -Dsonar.projectName=${projectId} \
                     -Dsonar.language=py \
                     -Dsonar.projectBaseDir=${root} \
                     -Dsonar.projectVersion=${appvers} \
                     -Dsonar.login=${USERNAME}
-				source deactivate
+		  source deactivate
                 """
             }
         }

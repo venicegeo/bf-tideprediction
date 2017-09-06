@@ -44,4 +44,8 @@ Change `TIDES_HOST` to whatever domain you're trying to test.
 
 I am Adding this line to test triggering job by the push in github.
 Another Try
+<<<<<<< HEAD
 Try it again!
+=======
+Try it again
+>>>>>>> d8654bc31baa81811beda8ece4eb7976a57d2eef

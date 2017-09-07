@@ -127,7 +127,7 @@ node {
           sh "cf start ${appName}"
         } catch (Exception e) {
           //sh "cf logs --recent ${appName}"
-          sh "cf delete ${appName} -f"
+          sh "cf delete ${appName} -f -r"
           error("Error during application start. Deleting ${appName} and failing the build.")
         }
       }
@@ -155,7 +155,7 @@ node {
           def legacyAppName = legacyApp.toString().trim()
           if (legacyAppName != appName) {
             sh "cf unmap-route ${legacyAppName} ${env.PHASE_ONE_PCF_DOMAIN} --hostname ${legacyAppName}"
-            sh "cf delete -f ${legacyAppName}"
+            sh "cf delete -f ${legacyAppName} -r"
           }
         }
       }
@@ -201,7 +201,7 @@ node {
             sh "cf start ${appName}"
           } catch (Exception e) {
             //sh "cf logs --recent ${appName}"
-            sh "cf delete ${appName} -f"
+            sh "cf delete ${appName} -f -r"
             error("Error during application start. Deleting ${appName} and failing the build.")
           }
         }
@@ -229,7 +229,7 @@ node {
             def legacyAppName = legacyApp.toString().trim()
             if (legacyAppName != appName) {
               sh "cf unmap-route ${legacyAppName} ${env.PHASE_TWO_PCF_DOMAIN} --hostname ${legacyAppName}"
-              sh "cf delete -f ${legacyAppName}"
+              sh "cf delete -f ${legacyAppName} -r"
             }
           }
         }

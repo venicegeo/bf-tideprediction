@@ -6,7 +6,7 @@ node {
   def nodejs = tool 'NodeJS_6'
   def zapHome = tool 'ZAProxy_v2_5_0'
   def fortifyBuild = "bf-tideprediction-${env.BUILD_NUMBER}"
-  def sonar = tool 'SonarQube Scanner 2.8'
+  def sonar = tool 'SonarQube Runner 2.8'
   def projectId = "venicegeo:beachfront:bf-tideprediction"
 
   stage('Setup') {

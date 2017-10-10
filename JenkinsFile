@@ -25,36 +25,6 @@ node {
   appvers = appvers.trim()
   def appName = "bf-tideprediction-${appvers}"
 
-  stage('Archive') {
-    // Build
-    sh "./ci/archive.sh"
-    // Check if exists already
-    def getDependencyStatus = sh(script: """mvn -X --settings ~/.m2/settings.xml dependency:get \
-      -Dmaven.repo.local="${root}/.m2/repository" \
-      -DrepositoryId=nexus \
-      -DartifactId=bf-tideprediction \
-      -Dversion=${appvers} \
-      -DgroupId="org.venice.beachfront" \
-      -Dpackaging=zip \
-      -DremoteRepositories="nexus::default::${env.ARTIFACT_STORAGE_DEPLOY_URL}" \
-    """, returnStatus: true)
-    echo "dependency status = ${getDependencyStatus}"
-    if (getDependencyStatus == 0) {
-      echo "Artifact version ${appvers} exists in Nexus, nothing to do"
-    } else {
-     sh """mvn -X --settings ~/.m2/settings.xml deploy:deploy-file -Dfile=${root}/bf-tideprediction.zip \
-        -DrepositoryId=nexus \
-        -Durl="${env.ARTIFACT_STORAGE_DEPLOY_URL}" \
-        -DgroupId="org.venice.beachfront" \
-        -DgeneratePom=false \
-        -Dpackaging=zip \
-        -Dmaven.repo.local="${root}/.m2/repository" \
-        -DartifactId=bf-tideprediction \
-        -Dversion=${appvers}
-      """
-    }
-  }
-
   if(!params.SKIP_SCANS) {
 	  stage('Scans') {
 		withCredentials([[$class: "StringBinding", credentialsId: "${env.THREADFIX_API_KEY}", variable: "THREADFIX_KEY"]]) {

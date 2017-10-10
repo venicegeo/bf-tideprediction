@@ -64,7 +64,7 @@ node {
 		  sh "/bin/curl -v --insecure -H 'Accept: application/json' -X POST --form file=@dependency-check-report.xml ${env.THREADFIX_URL}/rest/applications/${env.THREADFIX_ID}/upload?apiKey=${THREADFIX_KEY}"
 		  // Fortify
 		  sh "/opt/hp_fortify_sca/bin/sourceanalyzer -b ${fortifyBuild} ./{*.py,**/*.py}"
-		  sh "/opt/hp_fortify_sca/bin/sourceanalyzer -b ${fortifyBuild}  -scan -Xmx1G -f fortifyResults-${fortifyBuild}.fpr"
+		  sh "/opt/hp_fortify_sca/bin/sourceanalyzer -b ${fortifyBuild}  -scan -Xmx8G -f fortifyResults-${fortifyBuild}.fpr"
 		  sh "/bin/curl -v --insecure -H 'Accept: application/json' -X POST --form file=@fortifyResults-${fortifyBuild}.fpr ${env.THREADFIX_URL}/rest/applications/${env.THREADFIX_ID}/upload?apiKey=${THREADFIX_KEY}"
 		}
 
@@ -92,7 +92,7 @@ node {
 					"""
 				}
 			}*/
-	  }  
+	  }
 
 	  stage("Security Scan Pass/Fail") {
 		// Query threadfix and block if any highs/crits are found
@@ -106,7 +106,7 @@ node {
 			}
 		  }
 		}*/
-	  }  
+	  }
   }
 
   stage ('Int Deploy') {

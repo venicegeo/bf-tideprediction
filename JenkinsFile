@@ -97,7 +97,7 @@ node {
         sh "cf set-env ${appName} SPACE ${env.PHASE_ONE_PCF_SPACE}"
         sh "cf set-env ${appName} DOMAIN ${env.PHASE_ONE_PCF_DOMAIN}"
         if(env.GITLAB_CREDS) {
-          "cf set-env ${appName} REQUESTS_CA_BUNDLE /etc/ssl/certs/ca-certificates.crt"
+          sh "cf set-env ${appName} REQUESTS_CA_BUNDLE /etc/ssl/certs/ca-certificates.crt"
         }
         try {
           sh "cf start ${appName}"

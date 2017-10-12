@@ -94,13 +94,13 @@ node {
         sh "cf auth ${CFUSER} ${CFPASS}"
         sh "cf target -o ${env.PCF_ORG} -s ${env.PHASE_ONE_PCF_SPACE}"
         sh "cf push ${appName} -f manifest.jenkins.yml --hostname ${appName} -b ${env.PYTHON_BUILDPACK_NAME} -d ${env.PHASE_ONE_PCF_DOMAIN} --no-start"
-        sh "cf set-env ${appName} SPACE ${env.PHASE_ONE_PCF_SPACE}"
-        sh "cf set-env ${appName} DOMAIN ${env.PHASE_ONE_PCF_DOMAIN}"
-        if(env.GITLAB_CREDS) {
-          sh "cf set-env ${appName} REQUESTS_CA_BUNDLE /etc/ssl/certs/ca-certificates.crt"
-        }
-        try {
-          sh "cf start ${appName}"
+		try {
+			sh "cf set-env ${appName} SPACE ${env.PHASE_ONE_PCF_SPACE}"
+			sh "cf set-env ${appName} DOMAIN ${env.PHASE_ONE_PCF_DOMAIN}"
+			if(env.GITLAB_CREDS) {
+			  sh "cf set-env ${appName} REQUESTS_CA_BUNDLE /etc/ssl/certs/ca-certificates.crt"
+			}
+			sh "cf start ${appName}"
         } catch (Exception e) {
           //sh "cf logs --recent ${appName}"
           sh "cf delete ${appName} -f -r"
@@ -171,9 +171,12 @@ node {
           sh "cf auth ${CFUSER} ${CFPASS}"
           sh "cf target -o ${env.PCF_ORG} -s ${env.PHASE_TWO_PCF_SPACE}"
           sh "cf push ${appName} -f manifest.jenkins.yml --hostname ${appName} -b ${env.PYTHON_BUILDPACK_NAME} -d ${env.PHASE_TWO_PCF_DOMAIN} --no-start"
-          sh "cf set-env ${appName} SPACE ${env.PHASE_TWO_PCF_SPACE}"
-          sh "cf set-env ${appName} DOMAIN ${env.PHASE_TWO_PCF_DOMAIN}"
-          try {
+		  try {
+            sh "cf set-env ${appName} SPACE ${env.PHASE_TWO_PCF_SPACE}"
+            sh "cf set-env ${appName} DOMAIN ${env.PHASE_TWO_PCF_DOMAIN}"
+			if(env.GITLAB_CREDS) {
+			  sh "cf set-env ${appName} REQUESTS_CA_BUNDLE /etc/ssl/certs/ca-certificates.crt"
+			}
             sh "cf start ${appName}"
           } catch (Exception e) {
             //sh "cf logs --recent ${appName}"

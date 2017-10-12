@@ -8,7 +8,7 @@ node {
   def fortifyBuild = "bf-tideprediction-${env.BUILD_NUMBER}"
   def sonar = tool 'SonarQube Runner 2.8'
   def projectId = "venicegeo:beachfront:bf-tideprediction"
-  
+
   stage('Setup') {
     deleteDir()
     if(env.GITLAB_CREDS) {
@@ -24,7 +24,7 @@ node {
   def appvers = sh(script: "git describe --long --tags --always | sed 's/\\./-/'g", returnStdout: true)
   appvers = appvers.trim()
   def appName = "bf-tideprediction-${appvers}"
-  
+
   stage('Archive') {
     // Build
     sh "./ci/archive.sh"
@@ -97,6 +97,9 @@ node {
 		try {
 			sh "cf set-env ${appName} SPACE ${env.PHASE_ONE_PCF_SPACE}"
 			sh "cf set-env ${appName} DOMAIN ${env.PHASE_ONE_PCF_DOMAIN}"
+			if(env.GITLAB_CREDS) {
+			  sh "cf set-env ${appName} REQUESTS_CA_BUNDLE /etc/ssl/certs/ca-certificates.crt"
+			}
 			sh "cf start ${appName}"
         } catch (Exception e) {
           //sh "cf logs --recent ${appName}"

@@ -152,7 +152,7 @@ node {
             } else {
               git url: "${env.INTEGRATION_GIT_URL}", branch: "${env.INTEGRATION_GIT_BRANCH}"
             }
-            sh "npm install newman@2"
+            sh "npm install newman@3"
             sh "/bin/bash ci/beachfront.sh"
           }
         }
@@ -229,7 +229,7 @@ node {
               } else {
                 git url: "${env.INTEGRATION_GIT_URL}", branch: "${env.INTEGRATION_GIT_BRANCH}"
               }
-              sh "npm install newman@2"
+              sh "npm install newman@3"
               sh "/bin/bash ci/beachfront.sh"
             }
           }

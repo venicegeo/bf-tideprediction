@@ -8,6 +8,6 @@ applications:
   memory: 2G
   disk_quota: 2G
   instances: 1
-  buildpack: https://github.com/cloudfoundry/buildpack-python.git
+  buildpack: python_buildpack_1_5_20
   env:
     PATH: "/home/vcap/app/.conda/envs/dep_env/bin:/bin:/usr/bin"

@@ -27,7 +27,7 @@ node {
 
   stage('Archive') {
     // Build
-    sh "./ci/archive.sh"
+    sh "echo 'Placeholder build step'"
   }
 
   if(!params.SKIP_SCANS) {

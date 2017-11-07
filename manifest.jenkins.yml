@@ -2,7 +2,7 @@
 applications:
 - name: bf-tideprediction
   host: bf-tideprediction
-  path: bf-tideprediction.zip  
+  #path: bf-tideprediction.zip
   command: "gunicorn -t 360 -w 5 bftideprediction:app"
   health_check_type: process
   memory: 2G

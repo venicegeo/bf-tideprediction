@@ -27,7 +27,9 @@ node {
 
   stage('Archive') {
     // Build
-    sh "echo 'Placeholder build step'"
+    // Do this so PCF uses anaconda not pip
+    sh "echo 'Renaming requirements.txt'"
+    sh "mv requirements.txt requirements.txt.dis"
   }
 
   if(!params.SKIP_SCANS) {

@@ -28,8 +28,12 @@ node {
   stage('Archive') {
     // Build
     // Do this so PCF uses anaconda not pip
-    sh "echo 'Renaming requirements.txt'"
+    echo 'Renaming requirements.txt'
     sh "mv requirements.txt requirements.txt.dis"
+
+    echo 'Extracting historical data'
+    sh "./scripts/extract-historical-data.sh"
+
   }
 
   if(!params.SKIP_SCANS) {

@@ -107,8 +107,7 @@ node {
 			  sh "cf set-env ${appName} REQUESTS_CA_BUNDLE /etc/ssl/certs/ca-certificates.crt"
 			}
                         // Debug remove this
-                        sh "cf set-env ${appName} CF_TRACE true"
-			sh "cf start ${appName}"
+			sh "CF_TRACE=true && cf start ${appName}"
         } catch (Exception e) {
           sh "cf logs --recent ${appName}"
           sh "cf delete ${appName} -f -r"

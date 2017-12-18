@@ -37,6 +37,7 @@ bftideprediction
 vendor
 Procfile
 environment.yml
+manifest.jenkins.yml
 "
 
 zip -r ${APP}.${EXT} ${target_files}

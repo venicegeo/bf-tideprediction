@@ -1,0 +1,95 @@
+#!/usr/bin/groovy
+
+node {
+  def root = pwd()
+  def mvn = tool 'M3'
+  def appvers = "${env.PROMOTE_VERSION}"
+  def appBaseName = "bf-tideprediction"
+  def appName
+
+  if(!fileExists('.cf')) {
+    sh "mkdir -p .cf"
+  }
+  withEnv(["CF_HOME=.cf"]) {
+
+    def authenticatePcf = { ->
+      withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: "${env.PCF_CREDS}", usernameVariable: "CFUSER", passwordVariable: "CFPASS"]]) {
+        sh """
+          cf api ${env.PCF_API_ENDPOINT}
+          cf auth ${CFUSER} ${CFPASS}
+        """
+      }
+    }
+
+  stage('Pull Artifact') {
+    authenticatePcf()
+    if (appvers == "") {
+      // Get the latest version from Phase 2
+      echo "No version specified. Fetching the latest version from ${env.PHASE_TWO_PCF_SPACE}"
+      sh "cf target -o ${env.PCF_ORG} -s ${env.PHASE_TWO_PCF_SPACE}"
+      appName = sh(script: "cf apps | grep '${appBaseName}' | cut -f1 -d ' ' ", returnStdout: true) 
+      appvers = appName.trim().replace("${appBaseName}-", "")
+      echo "Pulled version ${appvers} from ${env.PHASE_TWO_PCF_SPACE}"
+    } else {
+      appName = "${appBaseName}-${appvers}"
+    }
+    appName = appName.trim()
+
+    // Get the Artifact from Nexus
+    def getDependencyStatus = sh(script: """mvn --quiet --settings ~/.m2/settings.xml dependency:get \
+      -Dmaven.repo.local="${root}/.m2/repository" \
+      -DrepositoryId=nexus \
+      -DartifactId=${appBaseName} \
+      -Dversion=${appvers} \
+      -DgroupId="org.venice.beachfront" \
+      -Dpackaging=tar.gz \
+      -Ddest=${root}/${appBaseName}.tar.gz \`
+      -DremoteRepositories="nexus::default::${env.ARTIFACT_STORAGE_DEPLOY_URL}" \
+      >> /dev/null 2>&1 \
+      """, returnStatus: true)
+    echo "dependency status = ${getDependencyStatus}"
+    if (getDependencyStatus == 0) {
+      //Unzip
+      sh "tar -xvzf ${root}/${appBaseName}.tar.gz"
+    } else {
+      error("The artifact version ${appvers} could not be found in Nexus.")
+    }
+  }
+
+  stage ('Deploy') {
+    authenticatePcf()
+    sh "cf target -o ${env.PCF_ORG} -s ${env.PROMOTE_SPACE}"
+
+    // Push the app
+    sh "cf push ${appName} -f manifest.jenkins.yml --hostname ${appName} -b ${env.PYTHON_BUILDPACK_NAME} -d ${env.PROMOTE_DOMAIN} --no-start"
+    try {
+        sh "cf set-env ${appName} SPACE ${env.PROMOTE_SPACE}"
+        sh "cf set-env ${appName} DOMAIN ${env.PROMOTE_DOMAIN}"
+        if(env.GITLAB_CREDS) {
+        sh "cf set-env ${appName} REQUESTS_CA_BUNDLE /etc/ssl/certs/ca-certificates.crt"
+      }
+        sh "cf start ${appName}"
+      } catch (Exception e) {
+        try {
+          sh "cf logs --recent ${appName}"
+        } catch (Exception ex) {
+          echo "Printing logs failed: ${ex}"
+        }
+        sh "cf delete ${appName} -f -r"
+        error("Error during application start. Deleting ${appName} and failing the build.")
+      }
+      // Assign Routes
+      def legacyAppNames = sh(script: "cf routes | grep \"${appBaseName} \" | awk '{print \$4}'", returnStdout: true)
+      sh "cf map-route ${appName} ${env.PROMOTE_DOMAIN} --hostname ${appBaseName}"
+      
+      // Delete old Routes
+      for (Object legacyApp : legacyAppNames.trim().tokenize(',')) {
+        def legacyAppName = legacyApp.toString().trim()
+        if (legacyAppName != appName) {
+          sh "cf unmap-route ${legacyAppName} ${env.PROMOTE_DOMAIN} --hostname ${appBaseName}"
+          sh "cf delete -f ${legacyAppName} -r"
+        }
+      }
+    }
+  }
+}

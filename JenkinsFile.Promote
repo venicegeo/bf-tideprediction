@@ -43,7 +43,7 @@ node {
       -Dversion=${appvers} \
       -DgroupId="org.venice.beachfront" \
       -Dpackaging=tar.gz \
-      -Ddest=${root}/${appBaseName}.tar.gz \`
+      -Ddest=${root}/${appBaseName}.tar.gz \
       -DremoteRepositories="nexus::default::${env.ARTIFACT_STORAGE_DEPLOY_URL}" \
       >> /dev/null 2>&1 \
       """, returnStatus: true)

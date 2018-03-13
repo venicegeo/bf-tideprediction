@@ -5,7 +5,7 @@ applications:
   path: bf-tideprediction.zip  
   command: "gunicorn -t 360 -w 5 bftideprediction:app"
   health_check_type: process
-  memory: 2G
+  memory: 1G
   disk_quota: 2G
   instances: 1
   buildpack: https://github.com/cloudfoundry/buildpack-python.git

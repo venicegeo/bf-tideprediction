@@ -26,9 +26,11 @@ node {
   def appName = "bf-tideprediction-${appvers}"
 
   stage('Archive') {
-    // Build the zipfile which contains the app
-    sh "./ci/archive.sh"
-    // Build the tarball which contains the zipfile and the manifest, which is what will reside in Nexus
+    // Build the zipfile which contains the application bits that are pushed to PCF. This includes the historical data.
+    sh "./scripts/extract-historical-data.sh"
+    sh "zip -r bf-tideprediction.zip bftideprediction Procfile environment.yml"
+    
+    // Build the tarball for the artifact which contains the application zipfile and the manifest, which is what will reside in Nexus
     def archiveName = "bf-tideprediction.tar.gz"
     sh """tar -cvzf ${archiveName} bf-tideprediction.zip manifest.jenkins.yml environment.yml"""
     // Push to Nexus

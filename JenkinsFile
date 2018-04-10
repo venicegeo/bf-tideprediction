@@ -8,10 +8,26 @@ node {
   def fortifyBuild = "bf-tideprediction-${env.BUILD_NUMBER}"
   def sonar = tool 'SonarQube Runner 2.8'
   def projectId = "venicegeo:beachfront:bf-tideprediction"
+  
+  stage("Config") {
+    // clone the configuration repository and copy the current configuration
+    def configDir = "${root}/configuration"
+    def configFile = "${root}/config.json"
+    dir(configDir) {
+      git url: "${env.CONFIGURATION_URL}", credentialsId: "${env.CONFIGURATION_CREDS}"
+      sh "mv ${configDir}/${ENVIRONMENT}-config.json ${configFile}"
+      deleteDir()
+    }
+    // read the current configuration
+    def configJson = readJSON file: "${configFile}"
+    for (param in configJson.credparams + configJson.jobparams) { 
+      env."${param.name}" = (param.type == "booleanParam") ? "${param.defaultvalue}".toBoolean() : "${param.defaultvalue}"
+    }
+  }
 
   stage('Setup') {
     deleteDir()
-    if(env.GITLAB_CREDS) {
+    if(env.USE_GIT_CREDS) {
       git url: "${env.GIT_URL}", branch: "${env.GIT_BRANCH}", credentialsId: "${env.GITLAB_CREDS}"
     } else {
       git url: "${env.GIT_URL}", branch: "${env.GIT_BRANCH}"
@@ -44,7 +60,7 @@ node {
     }
   }
 
-  if(!params.SKIP_SCANS) {
+  if(!env.SKIP_SCANS) {
 	  stage('Scans') {
 		withCredentials([[$class: "StringBinding", credentialsId: "${env.THREADFIX_API_KEY}", variable: "THREADFIX_KEY"]]) {
 		  // Dependency Checker
@@ -122,7 +138,7 @@ node {
         }
       }
     }
-	if(!params.SKIP_SCANS) {
+	if(!env.SKIP_SCANS) {
 		withCredentials([[$class: 'StringBinding', credentialsId: "${env.THREADFIX_API_KEY}", variable: 'THREADFIX_KEY']]) {
 		  sh "mkdir -p ${root}/zap-out"
 		  sh """${zapHome}/zap.sh -cmd \
@@ -152,7 +168,7 @@ node {
     }
   }
 
-  if (!params.SKIP_INTEGRATION_TESTS) {
+  if (!env.SKIP_INTEGRATION_TESTS) {
     stage('Phase One Integration Tests') {
       if(!fileExists("integration-tests")) {
         sh "mkdir -p integration-tests"
@@ -174,7 +190,7 @@ node {
     }
   }
 
-  if(params.DEPLOY_PHASE_TWO) {
+  if(env.DEPLOY_PHASE_TWO) {
     stage ('Stage Deploy') {
       if(!fileExists('.cf')) {
         sh "mkdir -p .cf"
@@ -199,7 +215,7 @@ node {
           }
         }
       }
-	  if(!params.SKIP_SCANS) {
+	  if(!env.SKIP_SCANS) {
 		  withCredentials([[$class: 'StringBinding', credentialsId: "${env.THREADFIX_API_KEY}", variable: 'THREADFIX_KEY']]) {
 			sh "mkdir -p ${root}/zap-out"
 			sh """${zapHome}/zap.sh -cmd \

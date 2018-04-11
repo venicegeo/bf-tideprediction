@@ -27,7 +27,7 @@ node {
 
   stage('Setup') {
     deleteDir()
-    if(env.USE_GIT_CREDS) {
+    if(env.USE_GIT_CREDS.toBoolean()) {
       git url: "${env.GIT_URL}", branch: "${env.GIT_BRANCH}", credentialsId: "${env.GITLAB_CREDS}"
     } else {
       git url: "${env.GIT_URL}", branch: "${env.GIT_BRANCH}"
@@ -60,7 +60,7 @@ node {
     }
   }
 
-  if(!env.SKIP_SCANS) {
+  if(!env.SKIP_SCANS.toBoolean()) {
 	  stage('Scans') {
 		withCredentials([[$class: "StringBinding", credentialsId: "${env.THREADFIX_API_KEY}", variable: "THREADFIX_KEY"]]) {
 		  // Dependency Checker
@@ -127,7 +127,7 @@ node {
 		try {
 			sh "cf set-env ${appName} SPACE ${env.PHASE_ONE_PCF_SPACE}"
 			sh "cf set-env ${appName} DOMAIN ${env.PHASE_ONE_PCF_DOMAIN}"
-			if(env.GITLAB_CREDS) {
+			if(env.USE_GIT_CREDS.toBoolean()) {
 			  sh "cf set-env ${appName} REQUESTS_CA_BUNDLE /etc/ssl/certs/ca-certificates.crt"
 			}
 			sh "cf start ${appName}"
@@ -138,7 +138,7 @@ node {
         }
       }
     }
-	if(!env.SKIP_SCANS) {
+	if(!env.SKIP_SCANS.toBoolean()) {
 		withCredentials([[$class: 'StringBinding', credentialsId: "${env.THREADFIX_API_KEY}", variable: 'THREADFIX_KEY']]) {
 		  sh "mkdir -p ${root}/zap-out"
 		  sh """${zapHome}/zap.sh -cmd \
@@ -168,7 +168,7 @@ node {
     }
   }
 
-  if (!env.SKIP_INTEGRATION_TESTS) {
+  if (!env.SKIP_INTEGRATION_TESTS.toBoolean()) {
     stage('Phase One Integration Tests') {
       if(!fileExists("integration-tests")) {
         sh "mkdir -p integration-tests"
@@ -190,7 +190,7 @@ node {
     }
   }
 
-  if(env.DEPLOY_PHASE_TWO) {
+  if(env.DEPLOY_PHASE_TWO.toBoolean()) {
     stage ('Stage Deploy') {
       if(!fileExists('.cf')) {
         sh "mkdir -p .cf"
@@ -204,7 +204,7 @@ node {
 		  try {
             sh "cf set-env ${appName} SPACE ${env.PHASE_TWO_PCF_SPACE}"
             sh "cf set-env ${appName} DOMAIN ${env.PHASE_TWO_PCF_DOMAIN}"
-			if(env.GITLAB_CREDS) {
+			if(env.USE_GIT_CREDS.toBoolean()) {
 			  sh "cf set-env ${appName} REQUESTS_CA_BUNDLE /etc/ssl/certs/ca-certificates.crt"
 			}
             sh "cf start ${appName}"
@@ -215,7 +215,7 @@ node {
           }
         }
       }
-	  if(!env.SKIP_SCANS) {
+	  if(!env.SKIP_SCANS.toBoolean()) {
 		  withCredentials([[$class: 'StringBinding', credentialsId: "${env.THREADFIX_API_KEY}", variable: 'THREADFIX_KEY']]) {
 			sh "mkdir -p ${root}/zap-out"
 			sh """${zapHome}/zap.sh -cmd \

@@ -3,9 +3,27 @@
 node {
   def root = pwd()
   def mvn = tool 'M3'
-  def appvers = "${env.PROMOTE_VERSION}"
   def appBaseName = "bf-tideprediction"
   def appName
+
+  stage("Config") {
+    // clone the configuration repository and copy the current configuration
+    def configDir = "${root}/configuration"
+    def configFile = "${root}/config.json"
+    dir(configDir) {
+      git url: "${env.CONFIGURATION_URL}", credentialsId: "${env.CONFIGURATION_CREDS}"
+      sh "mv ${configDir}/${env.ENVIRONMENT}-config.json ${configFile}"
+      deleteDir()
+    }
+    // read the current configuration
+    def configJson = readJSON file: "${configFile}"
+    for (param in configJson.credparams + configJson.jobparams) {
+      def paramValueString = (param.defaultvalue != null) ? param.defaultvalue.toString() : ""
+      env."${param.name}" = (param.type == "booleanParam") ? paramValueString.toBoolean() : paramValueString
+    }
+  }
+
+  def appvers = "${env.PROMOTE_VERSION}"
 
   if(!fileExists('.cf')) {
     sh "mkdir -p .cf"
@@ -23,11 +41,11 @@ node {
 
   stage('Pull Artifact') {
     authenticatePcf()
-    if (appvers == "") {
+    if (appvers == "latest") {
       // Get the latest version from Phase 2
       echo "No version specified. Fetching the latest version from ${env.PHASE_TWO_PCF_SPACE}"
       sh "cf target -o ${env.PCF_ORG} -s ${env.PHASE_TWO_PCF_SPACE}"
-      appName = sh(script: "cf apps | grep '${appBaseName}' | cut -f1 -d ' ' ", returnStdout: true) 
+      appName = sh(script: "cf apps | grep '${appBaseName}' | cut -f1 -d ' ' ", returnStdout: true)
       appvers = appName.trim().replace("${appBaseName}-", "")
       echo "Pulled version ${appvers} from ${env.PHASE_TWO_PCF_SPACE}"
     } else {
@@ -81,7 +99,7 @@ node {
       // Assign Routes
       def legacyAppNames = sh(script: "cf routes | grep \"${appBaseName} \" | awk '{print \$4}'", returnStdout: true)
       sh "cf map-route ${appName} ${env.PROMOTE_DOMAIN} --hostname ${appBaseName}"
-      
+
       // Delete old Routes
       for (Object legacyApp : legacyAppNames.trim().tokenize(',')) {
         def legacyAppName = legacyApp.toString().trim()

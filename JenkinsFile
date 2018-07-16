@@ -32,9 +32,9 @@ node {
     } else {
       git url: "${env.GIT_URL}", branch: "${env.GIT_BRANCH}"
     }
-        withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: "${env.ARTIFACT_READ_ONLY_CREDS}", usernameVariable: "USER", passwordVariable: "PASS"]]) {
-            sh 'sed -i "s*CONDA_CHANNEL*`echo "${CONDA_CHANNEL_URL}" | sed "s#://#://${USER}:${PASS}@#g"`*g" environment.yml'
-	}
+    withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: "${env.ARTIFACT_READ_ONLY_CREDS}", usernameVariable: "USER", passwordVariable: "PASS"]]) {
+      sh 'sed -i "s*CONDA_CHANNEL*`echo "${CONDA_CHANNEL_URL}" | sed "s#://#://${USER}:${PASS}@#g"`*g" environment.yml'
+    }
   }
 
   def appvers = sh(script: "git describe --long --tags --always | sed 's/\\./-/'g", returnStdout: true)
@@ -60,59 +60,59 @@ node {
   }
 
   if(!env.SKIP_SCANS.toBoolean()) {
-	  stage('Scans') {
-		withCredentials([[$class: "StringBinding", credentialsId: "${env.THREADFIX_API_KEY}", variable: "THREADFIX_KEY"]]) {
-		  // Dependency Checker
-      def depHome = tool 'owasp_dependency_check'
-      withEnv(["PATH+=${depHome}/bin"]) {
-        sh 'dependency-check.sh --project "bf-tideprediction" --scan "." --format "XML" --enableExperimental --disableBundleAudit'
-        sh "/bin/curl -v --insecure -H 'Accept: application/json' -X POST --form file=@dependency-check-report.xml ${env.THREADFIX_URL}/rest/applications/${env.THREADFIX_ID}/upload?apiKey=${THREADFIX_KEY}"
+    stage('Scans') {
+      withCredentials([[$class: "StringBinding", credentialsId: "${env.THREADFIX_API_KEY}", variable: "THREADFIX_KEY"]]) {
+        // Dependency Checker
+        def depHome = tool 'owasp_dependency_check'
+        withEnv(["PATH+=${depHome}/bin"]) {
+          sh 'dependency-check.sh --project "bf-tideprediction" --scan "." --format "XML" --enableExperimental --disableBundleAudit'
+          sh "/bin/curl -v --insecure -H 'Accept: application/json' -X POST --form file=@dependency-check-report.xml ${env.THREADFIX_URL}/rest/applications/${env.THREADFIX_ID}/upload?apiKey=${THREADFIX_KEY}"
+        }
+        // Fortify
+        sh "/opt/hp_fortify_sca/bin/sourceanalyzer -b ${fortifyBuild} ./{*.py,**/*.py}"
+        sh "/opt/hp_fortify_sca/bin/sourceanalyzer -b ${fortifyBuild}  -scan -Xmx8G -f fortifyResults-${fortifyBuild}.fpr"
+        sh "/bin/curl -v --insecure -H 'Accept: application/json' -X POST --form file=@fortifyResults-${fortifyBuild}.fpr ${env.THREADFIX_URL}/rest/applications/${env.THREADFIX_ID}/upload?apiKey=${THREADFIX_KEY}"
       }
-		  // Fortify
-		  sh "/opt/hp_fortify_sca/bin/sourceanalyzer -b ${fortifyBuild} ./{*.py,**/*.py}"
-		  sh "/opt/hp_fortify_sca/bin/sourceanalyzer -b ${fortifyBuild}  -scan -Xmx8G -f fortifyResults-${fortifyBuild}.fpr"
-		  sh "/bin/curl -v --insecure -H 'Accept: application/json' -X POST --form file=@fortifyResults-${fortifyBuild}.fpr ${env.THREADFIX_URL}/rest/applications/${env.THREADFIX_ID}/upload?apiKey=${THREADFIX_KEY}"
-		}
 
-		/*
-		withCredentials([string(credentialsId: "${env.SONAR_TOKEN}", variable: 'USERNAME')]) {
-		  withEnv(["HOME=${root}"]) {
-			def projectId = "venicegeo:beachfront:bf-tideprediction"
-			sh "${mvn}/bin/mvn sonar:sonar -Dmaven.repo.local=${root} -Dsonar.host.url=${env.SONAR_URL} -Dsonar.projectKey=${projectId} -Dsonar.projectName=${projectId} -Dsonar.login=${USERNAME}"// -P nga"
-		  }
-		}
-			withCredentials([string(credentialsId: "${env.SONAR_TOKEN}", variable: 'USERNAME')]) {
-				withEnv(["HOME=${root}"]) {
-					sh """pwd && ls
-			  ${sonar}/bin/sonar-scanner \
-						-Dsonar.python.coverage.reportPath=report/coverage/coverage.xml \
-						-Dsonar.sources=${root}/bftideprediction \
-						-Dsonar.tests=${root}/test \
-						-Dsonar.host.url=${env.SONAR_URL} \
-						-Dsonar.projectKey=${projectId} \
-						-Dsonar.projectName=${projectId} \
-						-Dsonar.language=py \
-						-Dsonar.projectBaseDir=${root} \
-						-Dsonar.projectVersion=${appvers} \
-						-Dsonar.login=${USERNAME}
-					"""
-				}
-			}*/
-	  }
+      /*
+    withCredentials([string(credentialsId: "${env.SONAR_TOKEN}", variable: 'USERNAME')]) {
+      withEnv(["HOME=${root}"]) {
+      def projectId = "venicegeo:beachfront:bf-tideprediction"
+      sh "${mvn}/bin/mvn sonar:sonar -Dmaven.repo.local=${root} -Dsonar.host.url=${env.SONAR_URL} -Dsonar.projectKey=${projectId} -Dsonar.projectName=${projectId} -Dsonar.login=${USERNAME}"// -P nga"
+      }
+    }
+      withCredentials([string(credentialsId: "${env.SONAR_TOKEN}", variable: 'USERNAME')]) {
+        withEnv(["HOME=${root}"]) {
+          sh """pwd && ls
+        ${sonar}/bin/sonar-scanner \
+            -Dsonar.python.coverage.reportPath=report/coverage/coverage.xml \
+            -Dsonar.sources=${root}/bftideprediction \
+            -Dsonar.tests=${root}/test \
+            -Dsonar.host.url=${env.SONAR_URL} \
+            -Dsonar.projectKey=${projectId} \
+            -Dsonar.projectName=${projectId} \
+            -Dsonar.language=py \
+            -Dsonar.projectBaseDir=${root} \
+            -Dsonar.projectVersion=${appvers} \
+            -Dsonar.login=${USERNAME}
+          """
+        }
+      }*/
+    }
 
-	  stage("Security Scan Pass/Fail") {
-		// Query threadfix and block if any highs/crits are found
-		/*sh "mkdir -p sspf-pkg"
-		dir("./sspf-pkg") {
-		  withCredentials([[$class: 'StringBinding', credentialsId: "${env.THREADFIX_API_KEY}", variable: 'THREADFIX_KEY']]) {
-			sh "curl -L ${env.SSPF_PACKAGE} -o sspf.zip"
-			sh "unzip sspf.zip"
-			dir("./sspf-master/sspf") {
-			  sh "/bin/curl --fail --silent ${env.THREADFIX_URL}/rest/applications/${THREADFIX_ID}?apiKey=${THREADFIX_KEY} | ./sspf.py"
-			}
-		  }
-		}*/
-	  }
+    stage("Security Scan Pass/Fail") {
+      // Query threadfix and block if any highs/crits are found
+      /*sh "mkdir -p sspf-pkg"
+    dir("./sspf-pkg") {
+      withCredentials([[$class: 'StringBinding', credentialsId: "${env.THREADFIX_API_KEY}", variable: 'THREADFIX_KEY']]) {
+      sh "curl -L ${env.SSPF_PACKAGE} -o sspf.zip"
+      sh "unzip sspf.zip"
+      dir("./sspf-master/sspf") {
+        sh "/bin/curl --fail --silent ${env.THREADFIX_URL}/rest/applications/${THREADFIX_ID}?apiKey=${THREADFIX_KEY} | ./sspf.py"
+      }
+      }
+    }*/
+    }
   }
 
   stage ('Int Deploy') {
@@ -125,13 +125,13 @@ node {
         sh "cf auth ${CFUSER} ${CFPASS}"
         sh "cf target -o ${env.PCF_ORG} -s ${env.PHASE_ONE_PCF_SPACE}"
         sh "cf push ${appName} -f manifest.jenkins.yml --hostname ${appName} -b ${env.PYTHON_BUILDPACK_NAME} -d ${env.PHASE_ONE_PCF_DOMAIN} --no-start"
-		try {
-			sh "cf set-env ${appName} SPACE ${env.PHASE_ONE_PCF_SPACE}"
-			sh "cf set-env ${appName} DOMAIN ${env.PHASE_ONE_PCF_DOMAIN}"
-			if(env.USE_GIT_CREDS.toBoolean()) {
-			  sh "cf set-env ${appName} REQUESTS_CA_BUNDLE /etc/ssl/certs/ca-certificates.crt"
-			}
-			sh "cf start ${appName}"
+        try {
+          sh "cf set-env ${appName} SPACE ${env.PHASE_ONE_PCF_SPACE}"
+          sh "cf set-env ${appName} DOMAIN ${env.PHASE_ONE_PCF_DOMAIN}"
+          if(env.USE_GIT_CREDS.toBoolean()) {
+            sh "cf set-env ${appName} REQUESTS_CA_BUNDLE /etc/ssl/certs/ca-certificates.crt"
+          }
+          sh "cf start ${appName}"
         } catch (Exception e) {
           //sh "cf logs --recent ${appName}"
           sh "cf delete ${appName} -f -r"
@@ -139,29 +139,39 @@ node {
         }
       }
     }
-	if(!env.SKIP_SCANS.toBoolean()) {
-		withCredentials([[$class: 'StringBinding', credentialsId: "${env.THREADFIX_API_KEY}", variable: 'THREADFIX_KEY']]) {
-		  sh "mkdir -p ${root}/zap-out"
-		  sh """${zapHome}/zap.sh -cmd \
-			-quickout ${root}/zap-out/zap.xml \
-			-quickurl https://${appName}.${env.PHASE_ONE_PCF_DOMAIN} \
-		  """
-		  sh "cat ${root}/zap-out/zap.xml"
-		  sh "/bin/curl -v --insecure -H 'Accept: application/json' -X POST --form file=@${root}/zap-out/zap.xml ${env.THREADFIX_URL}/rest/applications/${THREADFIX_ID}/upload?apiKey=${THREADFIX_KEY}"
-		}
-	}
+    if(!env.SKIP_SCANS.toBoolean()) {
+      withCredentials([[$class: 'StringBinding', credentialsId: "${env.THREADFIX_API_KEY}", variable: 'THREADFIX_KEY']]) {
+        sh "mkdir -p ${root}/zap-out"
+        sh """${zapHome}/zap.sh -cmd \
+          -quickout ${root}/zap-out/zap.xml \
+          -quickurl https://${appName}.${env.PHASE_ONE_PCF_DOMAIN} \
+        """
+        sh "cat ${root}/zap-out/zap.xml"
+        sh "/bin/curl -v --insecure -H 'Accept: application/json' -X POST --form file=@${root}/zap-out/zap.xml ${env.THREADFIX_URL}/rest/applications/${THREADFIX_ID}/upload?apiKey=${THREADFIX_KEY}"
+      }
+    }
+    
     withEnv(['CF_HOME=.cf']) {
       withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: "${env.PCF_CREDS}", usernameVariable: 'CFUSER', passwordVariable: 'CFPASS']]) {
         sh "cf api ${env.PCF_API_ENDPOINT}"
         sh "cf auth ${CFUSER} ${CFPASS}"
         sh "cf target -o ${env.PCF_ORG} -s ${env.PHASE_ONE_PCF_SPACE}"
+        
+        // Define routes
         def legacyAppNames = sh(script: "cf routes | grep \"bf-tideprediction \" | awk '{print \$4}'", returnStdout: true)
         sh "cf map-route ${appName} ${env.PHASE_ONE_PCF_DOMAIN} --hostname bf-tideprediction"
+        sh "cf map-route ${appName} apps.internal --hostname bf-tideprediction-${env.PHASE_ONE_PCF_SPACE}"
+
+        // Define policies
+        def iaBroker = sh(script: "cf routes | grep \"bf-ia-broker\" | awk '{print \$4}'", returnStdout: true)
+        sh "cf add-network-policy ${iaBroker} --destination-app ${appName}"
+        
         // Remove Legacy applications
         for (Object legacyApp : legacyAppNames.trim().tokenize(',')) {
           def legacyAppName = legacyApp.toString().trim()
           if (legacyAppName != appName) {
             sh "cf unmap-route ${legacyAppName} ${env.PHASE_ONE_PCF_DOMAIN} --hostname bf-tideprediction"
+            sh "cf unmap-route ${legacyAppName} apps.internal --hostname bf-tideprediction-${env.PHASE_ONE_PCF_SPACE}"
             sh "cf delete -f ${legacyAppName} -r"
           }
         }
@@ -202,12 +212,12 @@ node {
           sh "cf auth ${CFUSER} ${CFPASS}"
           sh "cf target -o ${env.PCF_ORG} -s ${env.PHASE_TWO_PCF_SPACE}"
           sh "cf push ${appName} -f manifest.jenkins.yml --hostname ${appName} -b ${env.PYTHON_BUILDPACK_NAME} -d ${env.PHASE_TWO_PCF_DOMAIN} --no-start"
-		  try {
+          try {
             sh "cf set-env ${appName} SPACE ${env.PHASE_TWO_PCF_SPACE}"
             sh "cf set-env ${appName} DOMAIN ${env.PHASE_TWO_PCF_DOMAIN}"
-			if(env.USE_GIT_CREDS.toBoolean()) {
-			  sh "cf set-env ${appName} REQUESTS_CA_BUNDLE /etc/ssl/certs/ca-certificates.crt"
-			}
+            if(env.USE_GIT_CREDS.toBoolean()) {
+              sh "cf set-env ${appName} REQUESTS_CA_BUNDLE /etc/ssl/certs/ca-certificates.crt"
+            }
             sh "cf start ${appName}"
           } catch (Exception e) {
             //sh "cf logs --recent ${appName}"
@@ -216,36 +226,45 @@ node {
           }
         }
       }
-	  if(!env.SKIP_SCANS.toBoolean()) {
-		  withCredentials([[$class: 'StringBinding', credentialsId: "${env.THREADFIX_API_KEY}", variable: 'THREADFIX_KEY']]) {
-			sh "mkdir -p ${root}/zap-out"
-			sh """${zapHome}/zap.sh -cmd \
-			  -quickout ${root}/zap-out/zap.xml \
-			  -quickurl https://${appName}.${env.PHASE_TWO_PCF_DOMAIN} \
-			"""
-			sh "cat ${root}/zap-out/zap.xml"
-			sh "/bin/curl -v --insecure -H 'Accept: application/json' -X POST --form file=@${root}/zap-out/zap.xml ${env.THREADFIX_URL}/rest/applications/${THREADFIX_ID}/upload?apiKey=${THREADFIX_KEY}"
-		  }
-	  }
+      if(!env.SKIP_SCANS.toBoolean()) {
+        withCredentials([[$class: 'StringBinding', credentialsId: "${env.THREADFIX_API_KEY}", variable: 'THREADFIX_KEY']]) {
+          sh "mkdir -p ${root}/zap-out"
+          sh """${zapHome}/zap.sh -cmd \
+            -quickout ${root}/zap-out/zap.xml \
+            -quickurl https://${appName}.${env.PHASE_TWO_PCF_DOMAIN} \
+          """
+          sh "cat ${root}/zap-out/zap.xml"
+          sh "/bin/curl -v --insecure -H 'Accept: application/json' -X POST --form file=@${root}/zap-out/zap.xml ${env.THREADFIX_URL}/rest/applications/${THREADFIX_ID}/upload?apiKey=${THREADFIX_KEY}"
+        }
+      }
       withEnv(['CF_HOME=.cf']) {
         withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: "${env.PCF_CREDS}", usernameVariable: 'CFUSER', passwordVariable: 'CFPASS']]) {
           sh "cf api ${env.PCF_API_ENDPOINT}"
           sh "cf auth ${CFUSER} ${CFPASS}"
           sh "cf target -o ${env.PCF_ORG} -s ${env.PHASE_TWO_PCF_SPACE}"
+          
+          // Define routes
           def legacyAppNames = sh(script: "cf routes | grep \"bf-tideprediction \" | awk '{print \$4}'", returnStdout: true)
           sh "cf map-route ${appName} ${env.PHASE_TWO_PCF_DOMAIN} --hostname bf-tideprediction"
+          sh "cf map-route ${appName} apps.internal --hostname bf-tideprediction-${env.PHASE_TWO_PCF_SPACE}"
+          
+          // Define policies
+          def iaBroker = sh(script: "cf routes | grep \"bf-ia-broker\" | awk '{print \$4}'", returnStdout: true)
+          sh "cf add-network-policy ${iaBroker} --destination-app ${appName}"
+          
           // Remove Legacy applications
           for (Object legacyApp : legacyAppNames.trim().tokenize(',')) {
             def legacyAppName = legacyApp.toString().trim()
             if (legacyAppName != appName) {
               sh "cf unmap-route ${legacyAppName} ${env.PHASE_TWO_PCF_DOMAIN} --hostname bf-tideprediction"
+              sh "cf unmap-route ${legacyAppName} apps.internal --hostname bf-tideprediction-${env.PHASE_TWO_PCF_SPACE}"
               sh "cf delete -f ${legacyAppName} -r"
             }
           }
         }
       }
     }
-	  
+    
   }
 }
 

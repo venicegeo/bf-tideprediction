@@ -165,7 +165,7 @@ node {
         // Define policies
         def iaBroker = sh(script: "cf routes | grep \"bf-ia-broker \" | awk '{print \$4}'", returnStdout: true).trim()
         echo "${iaBroker}"
-        sh "cf add-network-policy ${iaBroker} --destination-app ${appName} --protocl tcp --port 80"
+        sh "cf add-network-policy ${iaBroker} --destination-app ${appName} --protocol tcp --port 80"
         
         // Remove Legacy applications
         for (Object legacyApp : legacyAppNames.trim().tokenize(',')) {

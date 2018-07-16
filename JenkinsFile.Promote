@@ -102,7 +102,7 @@ node {
       sh "cf map-route ${appName} apps.internal --hostname ${appBaseName}-${env.PROMOTE_SPACE}"
       
       // Define Policies
-      def iaBroker = sh(script: "cf routes | grep \"bf-ia-broker\" | awk '{print \$4}'", returnStdout: true)
+      def iaBroker = sh(script: "cf routes | grep \"bf-ia-broker\" | awk '{print \$4}'", returnStdout: true).trim()
       sh "cf add-network-policy ${iaBroker} --destination-app ${appName}"
 
       // Delete old Routes

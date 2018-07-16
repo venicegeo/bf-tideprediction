@@ -163,7 +163,7 @@ node {
         sh "cf map-route ${appName} apps.internal --hostname bf-tideprediction-${env.PHASE_ONE_PCF_SPACE}"
 
         // Define policies
-        def iaBroker = sh(script: "cf routes | grep \"bf-ia-broker\" | awk '{print \$4}'", returnStdout: true).trim()
+        def iaBroker = sh(script: "cf routes | grep \"bf-ia-broker \" | awk '{print \$4}'", returnStdout: true).trim()
         echo "${iaBroker}"
         sh "cf add-network-policy ${iaBroker} --destination-app ${appName}"
         

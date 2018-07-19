@@ -39,53 +39,53 @@ node {
       }
     }
 
-  stage('Pull Artifact') {
-    authenticatePcf()
-    if (appvers == "latest") {
-      // Get the latest version from Phase 2
-      echo "No version specified. Fetching the latest version from ${env.PHASE_TWO_PCF_SPACE}"
-      sh "cf target -o ${env.PCF_ORG} -s ${env.PHASE_TWO_PCF_SPACE}"
-      appName = sh(script: "cf apps | grep '${appBaseName}' | cut -f1 -d ' ' ", returnStdout: true)
-      appvers = appName.trim().replace("${appBaseName}-", "")
-      echo "Pulled version ${appvers} from ${env.PHASE_TWO_PCF_SPACE}"
-    } else {
-      appName = "${appBaseName}-${appvers}"
-    }
-    appName = appName.trim()
+    stage('Pull Artifact') {
+      authenticatePcf()
+      if (appvers == "latest") {
+        // Get the latest version from Phase 2
+        echo "No version specified. Fetching the latest version from ${env.PHASE_TWO_PCF_SPACE}"
+        sh "cf target -o ${env.PCF_ORG} -s ${env.PHASE_TWO_PCF_SPACE}"
+        appName = sh(script: "cf apps | grep '${appBaseName}' | cut -f1 -d ' ' ", returnStdout: true)
+        appvers = appName.trim().replace("${appBaseName}-", "")
+        echo "Pulled version ${appvers} from ${env.PHASE_TWO_PCF_SPACE}"
+      } else {
+        appName = "${appBaseName}-${appvers}"
+      }
+      appName = appName.trim()
 
-    // Get the Artifact from Nexus
-    def getDependencyStatus = sh(script: """mvn --quiet --settings ~/.m2/settings.xml dependency:get \
-      -Dmaven.repo.local="${root}/.m2/repository" \
-      -DrepositoryId=nexus \
-      -DartifactId=${appBaseName} \
-      -Dversion=${appvers} \
-      -DgroupId="org.venice.beachfront" \
-      -Dpackaging=tar.gz \
-      -Ddest=${root}/${appBaseName}.tar.gz \
-      -DremoteRepositories="nexus::default::${env.ARTIFACT_STORAGE_DEPLOY_URL}" \
-      >> /dev/null 2>&1 \
+      // Get the Artifact from Nexus
+      def getDependencyStatus = sh(script: """mvn --quiet --settings ~/.m2/settings.xml dependency:get \
+        -Dmaven.repo.local="${root}/.m2/repository" \
+        -DrepositoryId=nexus \
+        -DartifactId=${appBaseName} \
+        -Dversion=${appvers} \
+        -DgroupId="org.venice.beachfront" \
+        -Dpackaging=tar.gz \
+        -Ddest=${root}/${appBaseName}.tar.gz \
+        -DremoteRepositories="nexus::default::${env.ARTIFACT_STORAGE_DEPLOY_URL}" \
+        >> /dev/null 2>&1 \
       """, returnStatus: true)
-    echo "dependency status = ${getDependencyStatus}"
-    if (getDependencyStatus == 0) {
-      //Unzip
-      sh "tar -xvzf ${root}/${appBaseName}.tar.gz"
-    } else {
-      error("The artifact version ${appvers} could not be found in Nexus.")
+      echo "dependency status = ${getDependencyStatus}"
+      if (getDependencyStatus == 0) {
+        //Unzip
+        sh "tar -xvzf ${root}/${appBaseName}.tar.gz"
+      } else {
+        error("The artifact version ${appvers} could not be found in Nexus.")
+      }
     }
-  }
 
-  stage ('Deploy') {
-    authenticatePcf()
-    sh "cf target -o ${env.PCF_ORG} -s ${env.PROMOTE_SPACE}"
+    stage ('Deploy') {
+      authenticatePcf()
+      sh "cf target -o ${env.PCF_ORG} -s ${env.PROMOTE_SPACE}"
 
-    // Push the app
-    sh "cf push ${appName} -f manifest.jenkins.yml --hostname ${appName} -b ${env.PYTHON_BUILDPACK_NAME} -d ${env.PROMOTE_DOMAIN} --no-start"
-    try {
+      // Push the app
+      sh "cf push ${appName} -f manifest.jenkins.yml --hostname ${appName} -b ${env.PYTHON_BUILDPACK_NAME} -d ${env.PROMOTE_DOMAIN} --no-start"
+      try {
         sh "cf set-env ${appName} SPACE ${env.PROMOTE_SPACE}"
         sh "cf set-env ${appName} DOMAIN ${env.PROMOTE_DOMAIN}"
         if(env.GITLAB_CREDS) {
-        sh "cf set-env ${appName} REQUESTS_CA_BUNDLE /etc/ssl/certs/ca-certificates.crt"
-      }
+          sh "cf set-env ${appName} REQUESTS_CA_BUNDLE /etc/ssl/certs/ca-certificates.crt"
+        }
         sh "cf start ${appName}"
       } catch (Exception e) {
         try {
@@ -99,12 +99,22 @@ node {
       // Assign Routes
       def legacyAppNames = sh(script: "cf routes | grep \"${appBaseName} \" | awk '{print \$4}'", returnStdout: true)
       sh "cf map-route ${appName} ${env.PROMOTE_DOMAIN} --hostname ${appBaseName}"
+      sh "cf map-route ${appName} apps.internal --hostname ${appBaseName}-${env.PROMOTE_SPACE}"
+      
+      // Define Policies
+      try {
+        def iaBroker = sh(script: "cf routes | grep \"bf-ia-broker \" | awk '{print \$4}'", returnStdout: true).trim()
+        sh "cf add-network-policy ${iaBroker} --destination-app ${appName} --protocol tcp --port 8080"
+      } catch (Exception ex) {
+        echo "Could not establish network policies. The network policy tool should be run post-build to ensure functionality."
+      }
 
       // Delete old Routes
       for (Object legacyApp : legacyAppNames.trim().tokenize(',')) {
         def legacyAppName = legacyApp.toString().trim()
         if (legacyAppName != appName) {
           sh "cf unmap-route ${legacyAppName} ${env.PROMOTE_DOMAIN} --hostname ${appBaseName}"
+          sh "cf unmap-route ${legacyAppName} apps.internal --hostname ${appBaseName}-${env.PROMOTE_SPACE}"
           sh "cf delete -f ${legacyAppName} -r"
         }
       }

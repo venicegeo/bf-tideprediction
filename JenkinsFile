@@ -163,8 +163,12 @@ node {
         sh "cf map-route ${appName} apps.internal --hostname bf-tideprediction-${env.PHASE_ONE_PCF_SPACE}"
 
         // Define policies
-        def iaBroker = sh(script: "cf routes | grep \"bf-ia-broker \" | awk '{print \$4}'", returnStdout: true).trim()
-        sh "cf add-network-policy ${iaBroker} --destination-app ${appName} --protocol tcp --port 8080"
+        try {
+          def iaBroker = sh(script: "cf routes | grep \"bf-ia-broker \" | awk '{print \$4}'", returnStdout: true).trim()
+          sh "cf add-network-policy ${iaBroker} --destination-app ${appName} --protocol tcp --port 8080"
+        } catch (Exception ex) {
+          echo "Could not establish network policies. The network policy tool should be run post-build to ensure functionality."
+        }
         
         // Remove Legacy applications
         for (Object legacyApp : legacyAppNames.trim().tokenize(',')) {
@@ -249,8 +253,12 @@ node {
           sh "cf map-route ${appName} apps.internal --hostname bf-tideprediction-${env.PHASE_TWO_PCF_SPACE}"
           
           // Define policies
-          def iaBroker = sh(script: "cf routes | grep \"bf-ia-broker\" | awk '{print \$4}'", returnStdout: true)
-          sh "cf add-network-policy ${iaBroker} --destination-app ${appName} --protocol tcp --port 8080"
+          try {
+            def iaBroker = sh(script: "cf routes | grep \"bf-ia-broker\" | awk '{print \$4}'", returnStdout: true)
+            sh "cf add-network-policy ${iaBroker} --destination-app ${appName} --protocol tcp --port 8080"
+          } catch (Exception ex) {
+            echo "Could not establish network policies. The network policy tool should be run post-build to ensure functionality."
+          }
           
           // Remove Legacy applications
           for (Object legacyApp : legacyAppNames.trim().tokenize(',')) {

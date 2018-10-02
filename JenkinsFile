@@ -66,12 +66,12 @@ node {
       def depHome = tool 'owasp_dependency_check'
       withEnv(["PATH+=${depHome}/bin"]) {
         sh 'dependency-check.sh --project "bf-tideprediction" --scan "." --format "XML" --enableExperimental --disableBundleAudit'
-        sh "/bin/curl -v --insecure -H 'Accept: application/json' -X POST --form file=@dependency-check-report.xml ${env.THREADFIX_URL}/rest/applications/${env.THREADFIX_ID}/upload?apiKey=${THREADFIX_KEY}"
+        sh "/bin/curl -v --insecure -H 'Accept: application/json' -X POST --form file=@dependency-check-report.xml ${env.THREADFIX_URL}/rest/latest/applications/${env.THREADFIX_ID}/upload?apiKey=${THREADFIX_KEY}"
       }
 		  // Fortify
 		  sh "/opt/hp_fortify_sca/bin/sourceanalyzer -b ${fortifyBuild} ./{*.py,**/*.py}"
 		  sh "/opt/hp_fortify_sca/bin/sourceanalyzer -b ${fortifyBuild}  -scan -Xmx8G -f fortifyResults-${fortifyBuild}.fpr"
-		  sh "/bin/curl -v --insecure -H 'Accept: application/json' -X POST --form file=@fortifyResults-${fortifyBuild}.fpr ${env.THREADFIX_URL}/rest/applications/${env.THREADFIX_ID}/upload?apiKey=${THREADFIX_KEY}"
+		  sh "/bin/curl -v --insecure -H 'Accept: application/json' -X POST --form file=@fortifyResults-${fortifyBuild}.fpr ${env.THREADFIX_URL}/rest/latest/applications/${env.THREADFIX_ID}/upload?apiKey=${THREADFIX_KEY}"
 		}
 
 		/*
@@ -108,7 +108,7 @@ node {
 			sh "curl -L ${env.SSPF_PACKAGE} -o sspf.zip"
 			sh "unzip sspf.zip"
 			dir("./sspf-master/sspf") {
-			  sh "/bin/curl --fail --silent ${env.THREADFIX_URL}/rest/applications/${THREADFIX_ID}?apiKey=${THREADFIX_KEY} | ./sspf.py"
+			  sh "/bin/curl --fail --silent ${env.THREADFIX_URL}/rest/latest/applications/${THREADFIX_ID}?apiKey=${THREADFIX_KEY} | ./sspf.py"
 			}
 		  }
 		}*/
@@ -147,7 +147,7 @@ node {
 			-quickurl https://${appName}.${env.PHASE_ONE_PCF_DOMAIN} \
 		  """
 		  sh "cat ${root}/zap-out/zap.xml"
-		  sh "/bin/curl -v --insecure -H 'Accept: application/json' -X POST --form file=@${root}/zap-out/zap.xml ${env.THREADFIX_URL}/rest/applications/${THREADFIX_ID}/upload?apiKey=${THREADFIX_KEY}"
+		  sh "/bin/curl -v --insecure -H 'Accept: application/json' -X POST --form file=@${root}/zap-out/zap.xml ${env.THREADFIX_URL}/rest/latest/applications/${THREADFIX_ID}/upload?apiKey=${THREADFIX_KEY}"
 		}
 	}
     withEnv(['CF_HOME=.cf']) {
@@ -224,7 +224,7 @@ node {
 			  -quickurl https://${appName}.${env.PHASE_TWO_PCF_DOMAIN} \
 			"""
 			sh "cat ${root}/zap-out/zap.xml"
-			sh "/bin/curl -v --insecure -H 'Accept: application/json' -X POST --form file=@${root}/zap-out/zap.xml ${env.THREADFIX_URL}/rest/applications/${THREADFIX_ID}/upload?apiKey=${THREADFIX_KEY}"
+			sh "/bin/curl -v --insecure -H 'Accept: application/json' -X POST --form file=@${root}/zap-out/zap.xml ${env.THREADFIX_URL}/rest/latest/applications/${THREADFIX_ID}/upload?apiKey=${THREADFIX_KEY}"
 		  }
 	  }
       withEnv(['CF_HOME=.cf']) {
